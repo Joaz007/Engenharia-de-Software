@@ -1,4 +1,4 @@
-<img width="1099" height="597" alt="image" src="https://github.com/user-attachments/assets/02d9e6ca-2743-44ae-980e-10c75e1960c1" /># Trabalho 1 — Engenharia de Requisitos
+# Trabalho 1 — Engenharia de Requisitos
 
 **Universidade Tecnológica Federal do Paraná (UTFPR)**
 **Apucarana - Paraná · 2025**
@@ -76,7 +76,8 @@ Principais pontos:
 ## Protótipo & Diagramas
 
 Protótipos sugeridos (implementar em `/docs`):
-
+<img width="1099" height="597" alt="image" src="https://github.com/user-attachments/assets/80d77090-db6c-4aa0-ad66-46a764085a12" />
+<img width="312" height="639" alt="image" src="https://github.com/user-attachments/assets/4e4f4b1b-7e08-421e-807f-b6fe1da973ce" />
 * `imagem1_interna_app.png` — demonstração da parte interna do app
 * `imagem2_home_page.png` — possível página inicial
 * `diagrama_sequencia.png` — fluxos: cadastro → cobrança → envio de comprovante → notificação
