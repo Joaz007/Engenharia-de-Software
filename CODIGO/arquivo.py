@@ -24,6 +24,28 @@ class Aluna:
 
 newAluna = Aluna("Maria Eduarda", "Duda", "F", "21/10/2005", "86800-014", "Rua Munhoz da Rocha, 1527", "Centro", "43998710567", "11734664959", 2, "19:30", "200.00", 10, 1)
 
+#criando classe academia para poder usar o singleton 
+class Academia: 
+    _instance = None #p deixar a instancia unica (SINGLETON)
+
+    def __new__(cls):
+        if cls._instance is None: 
+            cls._instance = super(Academia, cls).__new__(cls)
+            cls._instance.alunas = []
+        return cls._instance
+    
+    def addAlunas(self, aluna):
+        self.alunas.append(aluna)
+        print(f"A aluna {aluna.nome} foi cadastrada com sucesso.")
+
+    def listaAlunas(self):
+        print("\n=== ALUNAS ===")
+        if not self.alunas:
+            print("nenhuma aluna cadastrada.")
+            return
+        for i, aluna in enumerate(self.alunas, start = 1):
+            print(f"{i}. {aluna.nome}")
+
 def InserirInfosAlunas():
     print("==== CADASTRO DE ALUNA ==== \n")
 
@@ -69,7 +91,7 @@ def InserirInfosAlunas():
     while True: 
         termo_input = input("O termo de responsabilidade foi assinado? (S/N):\n").strip()
         if termo_input in ["S", "N", "s", "n"]:
-            termo = termo_input == "S"
+            termo = termo_input.upper() == "S"
             break 
         print("Por favor, insira uma resposta válida (S ou N)")
 
@@ -86,6 +108,8 @@ def InserirInfosAlunas():
     return nova_aluna
 
 def main():
+    academia = Academia()
+
     while True:
         print("\n=== MENU ===\n")
         print("1 - Cadastrar aluna")
@@ -96,8 +120,10 @@ def main():
 
         if opcao == "1": 
             aluna = InserirInfosAlunas()
-        #elif opcao == "2": 
-            #funcao de listar alunas
+            if aluna:
+                academia.addAlunas(aluna)
+        elif opcao == "2": 
+            academia.listaAlunas()
         elif opcao == "3":
             print("Saindo do sistema!")
             break
