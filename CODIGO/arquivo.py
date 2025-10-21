@@ -29,7 +29,13 @@ def InserirInfosAlunas():
 
     nome = input("Insira o nome completo da aluna:\n").strip()
     apelido = input("Apelido:\n").strip()
-    sexo = input("Sexo (F/M):\n").strip()
+
+    while True:
+        sexo = input("Sexo (F/M):\n").strip()
+        if sexo in ["F", "M", "f", "m"]:
+            break
+        print("Por favor, insira uma resposta válida (F ou M).")
+
     nascimento = input("Data de nascimento (dd/mm/aaaa):\n").strip()
     cep = input("CEP:\n").strip()
     endereco = input("Endereço:\n").strip()
@@ -60,14 +66,17 @@ def InserirInfosAlunas():
         except ValueError:
             print("Insira um valor numérico.")
 
-    termo_input = input("O termo de responsabilidade foi assinado? (S/N):\n").strip().upper()
-    termo = termo_input == "S"  # converte para booleano
+    while True: 
+        termo_input = input("O termo de responsabilidade foi assinado? (S/N):\n").strip()
+        if termo_input in ["S", "N", "s", "n"]:
+            termo = termo_input == "S"
+            break 
+        print("Por favor, insira uma resposta válida (S ou N)")
 
     if not termo:
         print("\nO termo não foi assinado. O cadastro não pôde ser concluído.\n")
         return None
 
-    # ordem correta dos parâmetros:
     nova_aluna = Aluna(
         nome, apelido, sexo, nascimento, cep, endereco, bairro,
         celular, cpf, dias, horario, valor, vencimento, termo
@@ -77,12 +86,23 @@ def InserirInfosAlunas():
     return nova_aluna
 
 def main():
+    while True:
+        print("\n=== MENU ===\n")
+        print("1 - Cadastrar aluna")
+        print("2 - Listar alunas cadastradas")
+        print("3 - Sair")
 
-    aluna = InserirInfosAlunas()
-    if aluna:
-        print("Aluna cadastrada com sucesso.")
-    else: 
-        print("Nenhuma aluna cadastrada.")
+        opcao = input("\nO que deseja fazer?\n").strip()
+
+        if opcao == "1": 
+            aluna = InserirInfosAlunas()
+        #elif opcao == "2": 
+            #funcao de listar alunas
+        elif opcao == "3":
+            print("Saindo do sistema!")
+            break
+        else: 
+            print("Opcao invalida.")
 
 if __name__ == "__main__":
     main()
