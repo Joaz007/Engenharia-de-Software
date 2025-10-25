@@ -1,3 +1,5 @@
+import re
+
 class Aluna:
     def __init__(self, nome, apelido, sexo, nascimento, cep, endereco, bairro, celular, cpf, dias, horario, valor, vencimento, termo):
         self.nome = nome
@@ -32,9 +34,35 @@ class Academia:
         if cls._instance is None: 
             cls._instance = super(Academia, cls).__new__(cls)
             cls._instance.alunas = []
+            cls._instance.horarios = {}
         return cls._instance
     
+    def limiteHorario(self, horario):
+        hora, minuto = map(int, horario.split(":"))
+        if 6 <= hora < 12: #turno da manha 
+            return 10
+        elif (hora == 14 and minuto >= 30) or (15 <= hora < 18) or (hora == 18 and minuto <= 30):
+            return 7
+        elif (hora == 18 and minuto > 30) or (19 <= hora <= 21):
+            return 10 
+        else: 
+            return 0
+    
     def addAlunas(self, aluna):
+        horario = aluna.horario
+        limite = self.limiteHorario(horario)
+
+        if limite == 0:
+            print(f"o horario {horario} não é válido.")
+            return
+        
+        if horario not in self.horarios:
+            self.horarios[horario] = []
+
+        if len(self.horarios[horario]) >= limite:
+            print(f"O horario {horario} ja atingiu o limite de {limite} alunas.")
+            return
+
         self.alunas.append(aluna)
         print(f"A aluna {aluna.nome} foi cadastrada com sucesso.")
 
@@ -44,7 +72,18 @@ class Academia:
             print("nenhuma aluna cadastrada.")
             return
         for i, aluna in enumerate(self.alunas, start = 1):
-            print(f"{i}. {aluna.nome}")
+            print(f"{i}. {aluna.nome} ({aluna.horario})")
+
+    def mostraVagas(self):
+        print("\n === VAGAS POR HORARIO ===")
+        if not self.horarios: 
+            print("nenhum horário registrado ainda.")
+            return
+        
+        for h, alunas in sorted(self.horarios.items()):
+            limite = self.limiteHorario(h)
+            vagasRestantes = limite - len(alunas)
+            print(f"{h}: {len(alunas)}/{limite} alunas ({vagasRestantes} vagas disponiveis)")
 
 def InserirInfosAlunas():
     print("==== CADASTRO DE ALUNA ==== \n")
@@ -72,7 +111,11 @@ def InserirInfosAlunas():
         except ValueError:
             print("Insira um valor válido.")
 
-    horario = input("Horário das aulas:\n").strip()
+    while True: 
+        horario = input("Horário da aula: (exemplo: 06:00)\n").strip()
+        if re.match(r"^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", horario):
+            break
+        print("por favor, insira um horário no formato HH:MM.")
 
     while True:
         try:
