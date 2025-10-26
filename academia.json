@@ -1,0 +1,31 @@
+{
+    "alunas": [
+        {
+            "nome": "Maria Eduarda Mafra",
+            "apelido": "Duda Mafra",
+            "sexo": "F",
+            "nascimento": "21/10/2005",
+            "cep": "1010101010",
+            "endereco": "Rua Centro, 1",
+            "bairro": "Centro",
+            "celular": "999999999",
+            "cpf": "123456789",
+            "dias": 2,
+            "horario": "16:30",
+            "valor": 120.0,
+            "vencimento": 5,
+            "termo": true
+        }
+    ],
+    "horarios": {
+        "segunda": {},
+        "terca": {},
+        "quarta": {},
+        "quinta": {
+            "16:30": [
+                "123456789"
+            ]
+        },
+        "sexta": {}
+    }
+}

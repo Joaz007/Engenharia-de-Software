@@ -1,4 +1,6 @@
 import re
+import json 
+import os
 
 class Aluna:
     def __init__(self, nome, apelido, sexo, nascimento, cep, endereco, bairro, celular, cpf, dias, horario, valor, vencimento, termo):
@@ -19,10 +21,17 @@ class Aluna:
 
     def __repr__(self):
         return f"<Aluna {self.nome} {self.horario}>"
+    
+    def converteDic(self):
+        return self.__dict__
+    
+    def instanciaDic(data):
+        return Aluna(**data)
 
 # Singleton Academia
 class Academia:
     _instance = None
+    ARQUIVO = "academia.json"
 
     def __new__(cls):
         if cls._instance is None:
@@ -46,6 +55,29 @@ class Academia:
             return 10
         else:
             return 0
+        
+    def salvaDados(self):
+        dados = {"alunas": [a.converteDic() for a in self.alunas], 
+                 "horarios": {dia: {h: [aluna.cpf for aluna in lista] for h, lista in horarios.items()} for dia, horarios in self.horarios.items()}}
+        
+        with open(self.ARQUIVO, "w", encoding="utf-8") as f:
+            json.dump(dados, f, ensure_ascii = False, indent = 4)
+
+    def carregaDados(self):
+        if not os.path.exists(self.ARQUIVO):
+            return
+        
+        with open(self.ARQUIVO, "r", encoding = "utf-8") as f:
+            dados = json.load(f)
+
+        self.alunas = [Aluna.instanciaDic(d) for d in dados.get("alunas", [])]
+
+        cpfAluna = {a.cpf: a for a in self.alunas}
+        self.horarios = {dia: {} for dia in ["segunda", "terca", "quarta", "quinta", "sexta"]}
+
+        for dia, horarios in dados.get("horarios", {}).items():
+            for h, cpfs in horarios.items():
+                self.horarios[dia][h] = [cpfAluna[c] for c in cpfs if c in cpfAluna]
 
     def addAlunas(self, aluna, dia):
         dia = dia.lower()
@@ -71,6 +103,7 @@ class Academia:
         # adiciona à lista geral e à lista do dia/horário
         self.alunas.append(aluna)
         self.horarios[dia][horario].append(aluna)
+        self.salvaDados()
 
         print(f"A aluna {aluna.nome} foi cadastrada em {dia} às {horario} com sucesso.")
 
