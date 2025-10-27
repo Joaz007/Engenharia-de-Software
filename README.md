@@ -7,9 +7,9 @@
 
 ## Equipe
 
-* **Millena Sartori de Oliveira** — RA: 2553147
-* **Maria Eduarda Mafra** — RA: 2553120
-* **João Antônio Sitta Martins** — RA: 2553058
+* **Millena S. de Oliveira** 
+* **Maria E. Mafra**
+* **João A. S. Martins**
 
 ---
 
