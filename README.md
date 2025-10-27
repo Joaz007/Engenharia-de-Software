@@ -42,7 +42,6 @@ Principais pontos:
 * Necessidade de centralizar geração de comprovantes (substituir o aplicativo TecnoFit).
 * Preferência por muitas funcionalidades (prioridade funcional sobre visual).
 * Notificações apenas para administradora após 3 dias de atraso.
----
 
 ---------------------------------------------
 ## PARTE 2 DO TRABALHO
@@ -72,7 +71,7 @@ Para o desenvolvimento do projeto, foram utilizados três padrões diferentes - 
 * Builder: Este é utilizado para a construção de objetos complexos passo a passo, garantindo todas as validações e inicializações necessárias. Assim, foi tomada a decisão de aplicá-lo para a criação da classe Aluna, permitindo que seja reduzido o número de construtores necessários (dada a grande quantidade de parâmetros) e que haja encadeamento de chamadas. 
 ---
 
-##Diagrama de arquitetura e Diagramas dos padrões de projeto de acordo com o código desenvolvido
+## Diagrama de arquitetura e Diagramas dos padrões de projeto de acordo com o código desenvolvido
 
 *OS DIAGRAMAS FORAM COLOCADOS NA PASTA "Trabalho 2" PARA EVITAR POLUIÇÃO VISUAL DO README
 
