@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import re
 import sqlite3
 import os
@@ -6,13 +7,12 @@ from typing import Optional, List, Tuple
 DB_PATH = "academia.db"
 WEEKDAYS = ["segunda", "terca", "quarta", "quinta", "sexta"]
 
-
 class Aluna:
-    def __init__(self, nome, apelido, sexo, nascimento, cep, endereco, bairro,
+    def __init__(self, nova, nome, apelido, nascimento, cep, endereco, bairro,
                  celular, cpf, dias, horario, valor, vencimento, termo):
+        self.nova = nova
         self.nome = nome
         self.apelido = apelido
-        self.sexo = sexo
         self.nascimento = nascimento
         self.cep = cep
         self.endereco = endereco
@@ -28,15 +28,33 @@ class Aluna:
     def __repr__(self):
         return f"Aluna(nome={self.nome!r}, cpf={self.cpf!r})"
 
+# A classe StrategyMensalidades define a interface para estratégias de cálculo de mensalidades.
+# As subclasses consideram alunas novas com 2 ou 3 vezes por semana e alunas com desconto.
+class StrategyMensalidades(ABC):    
+    @abstractmethod
+    def valorMensalidade(self) -> float:
+        pass
 
+class AlunaNova3x(StrategyMensalidades):    
+    def valorMensalidade(self) -> float:
+        return 230.00
+
+class AlunaNova2x(StrategyMensalidades):
+    def valorMensalidade(self) -> float:
+        return 200.00
+
+class AlunaComDesc(StrategyMensalidades):
+    def valorMensalidade(self) -> float:
+        return 0.00
+    
 # O AlunaBuilder constrói objetos Aluna passo a passo. Use o builder quando
 # houver muitos campos opcionais ou quando quiser centralizar validações.
 class AlunaBuilder:
     def __init__(self):
         self._data = {
+            "nova": None,
             "nome": None,
             "apelido": None,
-            "sexo": None,
             "nascimento": None,
             "cep": None,
             "endereco": None,
@@ -51,9 +69,9 @@ class AlunaBuilder:
         }
 
     # métodos 
+    def nova(self, v): self._data["nova"] = bool(v); return self
     def nome(self, v): self._data["nome"] = v.strip() if v is not None else None; return self
     def apelido(self, v): self._data["apelido"] = v.strip() if v is not None else None; return self
-    def sexo(self, v): self._data["sexo"] = v.strip().upper() if v else None; return self
     def nascimento(self, v): self._data["nascimento"] = v.strip() if v is not None else None; return self
     def cep(self, v): self._data["cep"] = v.strip() if v is not None else None; return self
     def endereco(self, v): self._data["endereco"] = v.strip() if v is not None else None; return self
@@ -69,7 +87,12 @@ class AlunaBuilder:
     def horario(self, v): self._data["horario"] = v.strip() if v is not None else None; return self
     def valor(self, v):
         try:
-            self._data["valor"] = float(str(v).replace(",", "."))
+            if not self._data["nova"]:
+                self._data["valor"] = AlunaComDesc().valorMensalidade()
+            elif  self._data["dias"] == 2:
+                self._data["valor"] = AlunaNova2x().valorMensalidade()
+            elif self._data["dias"] == 3:
+                self._data["valor"] = AlunaNova3x().valorMensalidade()
         except Exception:
             self._data["valor"] = None
         return self
@@ -92,9 +115,6 @@ class AlunaBuilder:
             raise ValueError("CPF inválido: deve conter 11 dígitos.")
         self._data["cpf"] = cpf_raw
 
-        if self._data.get("sexo") and self._data["sexo"] not in ("F", "M"):
-            raise ValueError("Sexo inválido (use 'F' ou 'M').")
-
         if not re.match(r"^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", self._data["horario"]):
             raise ValueError("Formato de horário inválido. Use HH:MM")
 
@@ -110,9 +130,9 @@ class AlunaBuilder:
     def build(self):
         self._validate()
         return Aluna(
+            self._data["nova"],
             self._data["nome"],
             self._data["apelido"],
-            self._data["sexo"],
             self._data["nascimento"],
             self._data["cep"],
             self._data["endereco"],
@@ -132,7 +152,6 @@ class AlunaBuilder:
             if k in b._data:
                 b._data[k] = v
         return b
-
 
 # A classe Academia implementa Singleton: o atributo _instance e o método __new__
 # asseguram que apenas UMA instância da classe exista durante a execução.
@@ -160,7 +179,6 @@ class Academia:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT NOT NULL,
                 apelido TEXT,
-                sexo TEXT,
                 nascimento TEXT,
                 cep TEXT,
                 endereco TEXT,
@@ -212,11 +230,11 @@ class Academia:
             try:
                 cur.execute('''
                 INSERT INTO alunas (
-                    nome, apelido, sexo, nascimento, cep, endereco, bairro,
+                    nome, apelido, nascimento, cep, endereco, bairro,
                     celular, cpf, dias, horario, valor, vencimento, termo
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
-                    aluna.nome, aluna.apelido, aluna.sexo, aluna.nascimento,
+                    aluna.nome, aluna.apelido, aluna.nascimento,
                     aluna.cep, aluna.endereco, aluna.bairro, aluna.celular,
                     aluna.cpf, aluna.dias, aluna.horario, aluna.valor,
                     aluna.vencimento, int(aluna.termo)
@@ -260,7 +278,7 @@ class Academia:
             return
 
         print("\n=== ALUNAS ===")
-        for i, r in enumerate(rows, 1):
+        for i, r in enumerate(rows, start=1):
             nome, apelido, cpf, dias, horario, valor, vencimento, termo = r
             termo_text = "Sim" if termo else "Não"
             print(f"{i}. {nome} ({apelido}) — CPF: {cpf} — {dias}x/sem — {horario} — R${valor:.2f} — Venc.: {vencimento} — Termo: {termo_text}")
@@ -274,7 +292,7 @@ class Academia:
                 cur.execute('''SELECT DISTINCT horario FROM horarios WHERE dia = ?''', (dia,))
                 horarios = [row[0] for row in cur.fetchall()]
                 if not horarios:
-                    print("  Nenhum horário ainda.")
+                    print("  Todos os horários estão disponíveis.")
                     continue
 
                 for h in sorted(horarios):
@@ -283,7 +301,6 @@ class Academia:
                     limite = self.limiteHorario(h)
                     vagas = max(limite - ocupado, 0)
                     print(f"  {h}: {ocupado}/{limite} ({vagas} vagas)")
-
 
 def validar_cpf(cpf: str):
     cpf_digits = ''.join(ch for ch in cpf if ch.isdigit())
@@ -310,15 +327,20 @@ def InserirInfosAlunas() -> Optional[Tuple[Aluna, List[Tuple[str, str]]]]:
 
     nome = input("Nome completo:\n").strip()
     apelido = input("Apelido:\n").strip()
+    nova = bool(input("Aluna sem desconto? (S/N):\n").strip().upper() == "S")
+    
+    while True:
+        nascimento = input("Data de nascimento (dd/mm/aaaa):\n").strip()
+        if re.match(r"^\d{2}/\d{2}/\d{4}$", nascimento):
+            break
+        print("Data inválida. Formato: dd/mm/aaaa")
 
     while True:
-        sexo = input("Sexo (F/M):\n").strip().upper()
-        if sexo in ["F", "M"]:
-            break
-        print("Por favor, insira F ou M.")
-
-    nascimento = input("Data de nascimento (dd/mm/aaaa):\n").strip()
-    cep = input("CEP:\n").strip()
+        cep = input("CEP (00000-000):\n").strip()
+        if re.match(r"^\d{5}-\d{3}$", cep):
+            break   
+        print("CEP inválido. Formato: 00000-000")
+        
     endereco = input("Endereço:\n").strip()
     bairro = input("Bairro:\n").strip()
     celular = input("Celular:\n").strip()
@@ -350,13 +372,42 @@ def InserirInfosAlunas() -> Optional[Tuple[Aluna, List[Tuple[str, str]]]]:
         while True:
             horario = input("Horário (HH:MM):\n").strip()
             if re.match(r"^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", horario):
-                break
-            print("Formato inválido. Ex: 06:00.")
+                pass
+            else:
+                print("Formato inválido. Ex: 06:00.")
+                continue
+            hora, minuto = map(int, horario.split(":"))
+
+            if dia == "segunda" or dia == "quarta":
+                if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
+                    break
+                elif (hora == 11 and minuto == 0) or (hora == 11 and minuto == 30):
+                    break
+                elif (hora >= 14 and minuto == 30) and (hora <= 19 and minuto == 30):
+                    break
+            elif dia == "terca" or dia == "quinta":
+                if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
+                    break
+                elif (hora >= 15 and minuto >= 30) and (hora <= 19 and minuto == 30):
+                    break
+            elif dia == "sexta":
+                if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
+                    break
+                elif (hora == 11 and minuto == 0) or (hora == 11 and minuto == 30):
+                    break
+                elif (hora >= 14 and minuto == 30) and (hora <= 18 and minuto == 30):
+                    break
+            print("Horário indisponível para o dia escolhido.")
         horariosSemana.append((dia, horario))
 
     while True:
         try:
-            valor = float(input("Valor da mensalidade:\n").replace(",", "."))
+            if not nova:
+                valor = float(input("Valor da mensalidade:\n").replace(",", "."))
+            elif dias == 2:
+                valor = AlunaNova2x().valorMensalidade()
+            elif dias == 3:
+                valor = AlunaNova3x().valorMensalidade()
             break
         except ValueError:
             print("Número inválido.")
@@ -384,9 +435,9 @@ def InserirInfosAlunas() -> Optional[Tuple[Aluna, List[Tuple[str, str]]]]:
     # Usa o AlunaBuilder para criar a instância 
     try:
         builder = AlunaBuilder() \
+            .nova(nova) \
             .nome(nome) \
             .apelido(apelido) \
-            .sexo(sexo) \
             .nascimento(nascimento) \
             .cep(cep) \
             .endereco(endereco) \
