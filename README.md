@@ -75,4 +75,17 @@ Para o desenvolvimento do projeto, foram utilizados três padrões diferentes - 
 
 *OS DIAGRAMAS FORAM COLOCADOS NA PASTA "Trabalho 2" PARA EVITAR POLUIÇÃO VISUAL DO README
 
+## Código desenvolvido
 
+Para a aplicação em si do projeto, foi utilizada a linguagem Python e a bibliteca de interface TKinter, muito utilizada por usuários da linguagem e muito similiar com a estrutura de formatação de HTML e CSS
+
+Para que seja possível a compilação, é necessário ter baixado as bibliotecas
+* tk
+* customtkinter
+* pillow
+
+Muitas vezes já vem baixada na própria biblioteca do Python3 mas caso não esteja, é possível baixar com o comando pip install {biblioteca}, por exemplo "pip install tk".
+É recomendada também a atualização com o comando -m pip install --upgrade pip na pasta aonde estiver o executável python.exe
+Caso não seja viável a instalação ou caso não tenha obtido sucesso na instalação, terá um PDF com um link de um vídeo mostrando o resultado do código inicial
+
+O projeto em si falta muitos detalhes a serem analisados, mas as principais funcionalidades foram apresentadas e estão funcionais.
