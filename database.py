@@ -248,33 +248,38 @@ class Academia:
         with self._connect() as conn:
             cur = conn.cursor()
             cur.execute('''
-            SELECT nome, apelido, cpf, dias, horario, valor, vencimento, termo FROM alunas ORDER BY nome
+            SELECT nome, apelido, cpf, dias, horario, valor, vencimento FROM alunas ORDER BY nome
             ''')
             rows = cur.fetchall()
 
         if not rows:
             return("Nenhuma aluna cadastrada.")
+        else:
+            return rows
 
-        for i, r in enumerate(rows, start=1):
-            nome, apelido, cpf, dias, horario, valor, vencimento, termo = r
-            termo_text = "Sim" if termo else "Não"
-            return(f"{i}. {nome} ({apelido}) — CPF: {cpf} — {dias}x/sem — {horario} — R${valor:.2f} — Venc.: {vencimento} — Termo: {termo_text}")
-
-    def mostraVagas(self):
+    def mostraVagas(self, dia: str) -> List[Tuple[int, int, int, int, int]]:
+        lista_de_vagas: List[Tuple[int, int, int, int, int]] = []
+    
         with self._connect() as conn:
             cur = conn.cursor()
-            for dia in WEEKDAYS:
-                cur.execute('''SELECT DISTINCT horario FROM horarios WHERE dia = ?''', (dia,))
-                horarios = [row[0] for row in cur.fetchall()]
-                if not horarios:
-                    return(f"\n{dia.capitalize()}: Todos os horários estão disponíveis.")
-
+            cur.execute('''SELECT DISTINCT horario FROM horarios WHERE dia = ?''', (dia,))
+            horarios = [row[0] for row in cur.fetchall()]
+            
+            if not horarios:
+                return []
+            else:
                 for h in sorted(horarios):
                     cur.execute('SELECT COUNT(*) FROM horarios WHERE dia = ? AND horario = ?', (dia, h))
                     ocupado = cur.fetchone()[0]
                     limite = self.limiteHorario(h)
+                    
+                    if limite == 0:
+                        continue 
                     vagas = max(limite - ocupado, 0)
-                    return(f"  {h}: {ocupado}/{limite} ({vagas} vagas)")
+                    vaga_atual = (h, ocupado, limite, vagas)
+                    lista_de_vagas.append(vaga_atual)
+                    
+                return lista_de_vagas
 
 def validar_cpf(cpf: str):
     cpf_digits = ''.join(ch for ch in cpf if ch.isdigit())
