@@ -7,7 +7,7 @@ import database as db #importa o arquivo database.py para manipulação do banco
 
 #cadastro - ok
 #fazer comprovante
-#verificar mensalidades vencidas
+#verificar disponibilidade de horário - ok
 #exibir a lista de alunas - ok
 #exibir a lista de alunas por turma
 #remover aluna
@@ -122,6 +122,7 @@ def verificar_cep(cep):
     
 def cadastro(janela):
     novaAluna = db.AlunaBuilder()
+    
     frameCadastro = ctk.CTkFrame(janela, fg_color="transparent", width=1400, height=750)
     frameCadastro.place(relx=0.5, rely=0.22, anchor=N)
     widgetCadastro = ctk.CTkFrame(frameCadastro, fg_color= "transparent", width=1400, height=750)
@@ -154,21 +155,6 @@ def cadastro(janela):
     labelCEP.grid(row=2, column=0, pady=10, sticky=E)
     entryCEP = ctk.CTkEntry(widgetCadastro, font=("Arial", 15))
     entryCEP.grid(row=2, column=1, pady=10, padx= 10, sticky=W)
-    
-    def buscar_cep():
-        cep = re.sub(r'\D', '', entryCEP.get())
-        resultado = verificar_cep(cep)
-
-        if isinstance(resultado, dict):
-            entryEndereco.insert(0, resultado.get('logradouro', ''))
-            entryBairro.insert(0, resultado.get('bairro', ''))
-        elif isinstance(resultado, tuple): # Erro
-            erro_msg = resultado[1]
-            labelResp = ctk.CTkLabel(widgetCadastro, text="", font=("Arial", 15))
-            labelResp.grid(row=2, column=2, pady=10, sticky=W)
-            labelResp.configure(text=erro_msg)
-            labelResp.after(3000, lambda: labelResp.destroy())
-
     botaoBuscarCEP = ctk.CTkButton(widgetCadastro, text="Buscar CEP", width= 50, command=buscar_cep)
     botaoBuscarCEP.grid(row=2, column=2, pady=10, padx=10, sticky=W)
     
@@ -263,6 +249,27 @@ def cadastro(janela):
     labelverificacao = ctk.CTkLabel(tab_view, text="", font=("Arial", 15))
     labelverificacao.grid(row=4, column=4, columnspan=2, pady=30)
     
+    # frame para os botões Voltar/Enviar
+    frame_botoes = ctk.CTkFrame(janela, fg_color="transparent", height=100, width=1400)
+    botao_voltar = ctk.CTkButton(frame_botoes, text="Voltar", font=("Arial", 15), command=lambda: voltar())
+    botao_voltar.pack(side="left", padx=20, pady=15)
+    botao_enviar = ctk.CTkButton(frame_botoes, text="Enviar", font=("Arial", 15), command=enviar_dados)
+    botao_enviar.pack(side="right", padx=20, pady=15)
+    
+    def buscar_cep():
+        cep = re.sub(r'\D', '', entryCEP.get())
+        resultado = verificar_cep(cep)
+
+        if isinstance(resultado, dict):
+            entryEndereco.insert(0, resultado.get('logradouro', ''))
+            entryBairro.insert(0, resultado.get('bairro', ''))
+        elif isinstance(resultado, tuple): # Erro
+            erro_msg = resultado[1]
+            labelResp = ctk.CTkLabel(widgetCadastro, text="", font=("Arial", 15))
+            labelResp.grid(row=2, column=2, pady=10, sticky=W)
+            labelResp.configure(text=erro_msg)
+            labelResp.after(3000, lambda: labelResp.destroy())
+            
     def verificar_horarios():
         if dia_semana.get() == 2:
             if not db.verificaHorarios(entryDiasSemana1.get().lower(), entryHorario1.get()):
@@ -276,6 +283,7 @@ def cadastro(janela):
                 labelverificacao.configure(text=f"Horário {entryHorario2.get()} indisponível para o dia {entryDiasSemana2.get().lower()}", text_color="red")
             if not db.verificaHorarios(entryDiasSemana3.get().lower(), entryHorario3.get()):
                 labelverificacao.configure(text=f"Horário {entryHorario3.get()} indisponível para o dia {entryDiasSemana3.get().lower()}", text_color="red")
+    
     def limpaInfo():
         #reseta valores padrão
         entryNome.delete(0, ctk.END)
@@ -341,13 +349,6 @@ def cadastro(janela):
             label.after(3000, lambda: (label.destroy(), voltar(), limpaInfo()))
         else:
             print("Erro ao enviar os dados.")
-    
-    # frame para os botões Voltar/Enviar
-    frame_botoes = ctk.CTkFrame(janela, fg_color="transparent", height=100, width=1400)
-    botao_voltar = ctk.CTkButton(frame_botoes, text="Voltar", font=("Arial", 15), command=lambda: voltar())
-    botao_voltar.pack(side="left", padx=20, pady=15)
-    botao_enviar = ctk.CTkButton(frame_botoes, text="Enviar", font=("Arial", 15), command=enviar_dados)
-    botao_enviar.pack(side="right", padx=20, pady=15)
 
     def continuar():
         # Validação simples
@@ -355,6 +356,7 @@ def cadastro(janela):
         entryCPF.configure(border_color="gray")
         entryData.configure(border_color="gray")
         entryNumero.configure(border_color="gray")
+        labelQuantDias.configure(border_color="gray")
         labelVencimento.configure(text_color="black")
         checkTermo.configure(border_color="gray")
         if (not entryNome.get().strip()):
@@ -368,6 +370,9 @@ def cadastro(janela):
             return
         if (not entryNumero.get().strip()):
             entryNumero.configure(border_color="red")
+            return
+        if (not dia_semana.get()):
+            labelQuantDias.configure(text_color="red")
             return
         if (not vencimento_var.get()):
             labelVencimento.configure(text_color="red")
