@@ -3,14 +3,13 @@ import re
 import sqlite3
 import os
 from typing import Optional, List, Tuple
-
+import interface as ctk
 DB_PATH = "academia.db"
 WEEKDAYS = ["segunda", "terca", "quarta", "quinta", "sexta"]
 
 class Aluna:
-    def __init__(self, nova, nome, apelido, nascimento, cep, endereco, bairro,
-                 celular, cpf, dias, horario, valor, vencimento, termo):
-        self.nova = nova
+    def __init__(self, nome, apelido, nascimento, cep, endereco, bairro,
+                 celular, cpf, dias, diasSemana, horario, valor, vencimento, termo):
         self.nome = nome
         self.apelido = apelido
         self.nascimento = nascimento
@@ -20,6 +19,7 @@ class Aluna:
         self.celular = celular
         self.cpf = cpf
         self.dias = dias
+        self.diasSemana = diasSemana
         self.horario = horario
         self.valor = valor
         self.vencimento = vencimento
@@ -52,7 +52,6 @@ class AlunaComDesc(StrategyMensalidades):
 class AlunaBuilder:
     def __init__(self):
         self._data = {
-            "nova": None,
             "nome": None,
             "apelido": None,
             "nascimento": None,
@@ -62,6 +61,7 @@ class AlunaBuilder:
             "celular": None,
             "cpf": None,
             "dias": None,
+            "diasSemana": None,
             "horario": None,
             "valor": None,
             "vencimento": None,
@@ -69,7 +69,6 @@ class AlunaBuilder:
         }
 
     # métodos 
-    def nova(self, v): self._data["nova"] = bool(v); return self
     def nome(self, v): self._data["nome"] = v.strip() if v is not None else None; return self
     def apelido(self, v): self._data["apelido"] = v.strip() if v is not None else None; return self
     def nascimento(self, v): self._data["nascimento"] = v.strip() if v is not None else None; return self
@@ -84,18 +83,9 @@ class AlunaBuilder:
         except Exception:
             self._data["dias"] = None
         return self
-    def horario(self, v): self._data["horario"] = v.strip() if v is not None else None; return self
-    def valor(self, v):
-        try:
-            if not self._data["nova"]:
-                self._data["valor"] = AlunaComDesc().valorMensalidade()
-            elif  self._data["dias"] == 2:
-                self._data["valor"] = AlunaNova2x().valorMensalidade()
-            elif self._data["dias"] == 3:
-                self._data["valor"] = AlunaNova3x().valorMensalidade()
-        except Exception:
-            self._data["valor"] = None
-        return self
+    def diasSemana(self, v):self._data["diasSemana"] = v.split(",") if v is not None else None; return self
+    def horario(self, v): self._data["horario"] = v.split(",") if v is not None else None; return self
+    def valor(self, v): self._data["valor"] = float(v) if v is not None else None; return self
     def vencimento(self, v):
         try:
             self._data["vencimento"] = int(v)
@@ -105,7 +95,7 @@ class AlunaBuilder:
     def termo(self, v): self._data["termo"] = bool(v); return self
 
     def _validate(self):
-        required = ["nome", "cpf", "dias", "horario", "valor", "vencimento", "termo"]
+        required = ["nome", "cpf", "dias", "valor", "vencimento", "termo"]
         for k in required:
             if self._data.get(k) is None:
                 raise ValueError("Campo obrigatório faltando: {}".format(k))
@@ -114,9 +104,6 @@ class AlunaBuilder:
         if len(cpf_raw) != 11:
             raise ValueError("CPF inválido: deve conter 11 dígitos.")
         self._data["cpf"] = cpf_raw
-
-        if not re.match(r"^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", self._data["horario"]):
-            raise ValueError("Formato de horário inválido. Use HH:MM")
 
         if not (isinstance(self._data["dias"], int) and self._data["dias"] > 0):
             raise ValueError("Dias deve ser inteiro > 0")
@@ -130,7 +117,6 @@ class AlunaBuilder:
     def build(self):
         self._validate()
         return Aluna(
-            self._data["nova"],
             self._data["nome"],
             self._data["apelido"],
             self._data["nascimento"],
@@ -140,6 +126,7 @@ class AlunaBuilder:
             self._data["celular"],
             self._data["cpf"],
             self._data["dias"],
+            self._data["diasSemana"],
             self._data["horario"],
             self._data["valor"],
             self._data["vencimento"],
@@ -213,57 +200,49 @@ class Academia:
             return 10
         return 0
 
-    def addAlunas(self, aluna: Aluna, dia: str, horario: str):
-        dia = dia.lower()
-        if dia not in WEEKDAYS:
-            print("Dia inválido.")
-            return
+    def addAlunas(self, aluna: Aluna):
+        aluna.diasSemana = [d.strip().lower() for d in aluna.diasSemana]
+        aluna.horario = [h.strip() for h in aluna.horario]
+        
+        for dia, horario in zip(aluna.diasSemana, aluna.horario):
+            with self._connect() as conn:
+                cur = conn.cursor()
+                # insere aluna se não existir (cpf UNIQUE evita duplicata)
+                try:
+                    cur.execute('''
+                    INSERT INTO alunas (
+                        nome, apelido, nascimento, cep, endereco, bairro,
+                        celular, cpf, dias, horario, valor, vencimento, termo
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        aluna.nome, aluna.apelido, aluna.nascimento,
+                        aluna.cep, aluna.endereco, aluna.bairro, aluna.celular,
+                        aluna.cpf, aluna.dias, horario, aluna.valor,
+                        aluna.vencimento, int(aluna.termo)
+                    ))
+                    conn.commit()
+                except sqlite3.IntegrityError:
+                    pass
 
-        limite = self.limiteHorario(horario)
-        if limite == 0:
-            print(f"Horário {horario} inválido.")
-            return
-
-        with self._connect() as conn:
-            cur = conn.cursor()
-            # insere aluna se não existir (cpf UNIQUE evita duplicata)
-            try:
                 cur.execute('''
-                INSERT INTO alunas (
-                    nome, apelido, nascimento, cep, endereco, bairro,
-                    celular, cpf, dias, horario, valor, vencimento, termo
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    aluna.nome, aluna.apelido, aluna.nascimento,
-                    aluna.cep, aluna.endereco, aluna.bairro, aluna.celular,
-                    aluna.cpf, aluna.dias, aluna.horario, aluna.valor,
-                    aluna.vencimento, int(aluna.termo)
-                ))
+                SELECT 1 FROM horarios WHERE dia = ? AND horario = ? AND aluna_cpf = ?
+                ''', (dia, horario, aluna.cpf))
+                if cur.fetchone():
+                    return(f"{aluna.nome} já está cadastrada em {dia} às {horario}.")
+                    
+                cur.execute('''
+                SELECT COUNT(*) FROM horarios WHERE dia = ? AND horario = ?
+                ''', (dia, horario))
+                count = cur.fetchone()[0]
+                if count >= self.limiteHorario(horario):
+                    return(f"O horário {horario} de {dia} já está cheio ({self.limiteHorario(horario)} alunas).")
+
+                cur.execute('''
+                INSERT INTO horarios (dia, horario, aluna_cpf) VALUES (?, ?, ?)
+                ''', (dia, horario, aluna.cpf))
                 conn.commit()
-            except sqlite3.IntegrityError:
-                pass
 
-            cur.execute('''
-            SELECT 1 FROM horarios WHERE dia = ? AND horario = ? AND aluna_cpf = ?
-            ''', (dia, horario, aluna.cpf))
-            if cur.fetchone():
-                print(f"{aluna.nome} já está cadastrada em {dia} às {horario}.")
-                return
-
-            cur.execute('''
-            SELECT COUNT(*) FROM horarios WHERE dia = ? AND horario = ?
-            ''', (dia, horario))
-            count = cur.fetchone()[0]
-            if count >= limite:
-                print(f"O horário {horario} de {dia} já está cheio ({limite} alunas).")
-                return
-
-            cur.execute('''
-            INSERT INTO horarios (dia, horario, aluna_cpf) VALUES (?, ?, ?)
-            ''', (dia, horario, aluna.cpf))
-            conn.commit()
-
-            print(f"{aluna.nome} cadastrada em {dia} às {horario}.")
+        return(f"{aluna.nome} cadastrada nos horários com sucesso.")
 
     def listaAlunas(self):
         with self._connect() as conn:
@@ -274,33 +253,28 @@ class Academia:
             rows = cur.fetchall()
 
         if not rows:
-            print("Nenhuma aluna cadastrada.")
-            return
+            return("Nenhuma aluna cadastrada.")
 
-        print("\n=== ALUNAS ===")
         for i, r in enumerate(rows, start=1):
             nome, apelido, cpf, dias, horario, valor, vencimento, termo = r
             termo_text = "Sim" if termo else "Não"
-            print(f"{i}. {nome} ({apelido}) — CPF: {cpf} — {dias}x/sem — {horario} — R${valor:.2f} — Venc.: {vencimento} — Termo: {termo_text}")
+            return(f"{i}. {nome} ({apelido}) — CPF: {cpf} — {dias}x/sem — {horario} — R${valor:.2f} — Venc.: {vencimento} — Termo: {termo_text}")
 
     def mostraVagas(self):
         with self._connect() as conn:
             cur = conn.cursor()
-            print("\n=== VAGAS ===")
             for dia in WEEKDAYS:
-                print(f"\n{dia.capitalize()}:")
                 cur.execute('''SELECT DISTINCT horario FROM horarios WHERE dia = ?''', (dia,))
                 horarios = [row[0] for row in cur.fetchall()]
                 if not horarios:
-                    print("  Todos os horários estão disponíveis.")
-                    continue
+                    return(f"\n{dia.capitalize()}: Todos os horários estão disponíveis.")
 
                 for h in sorted(horarios):
                     cur.execute('SELECT COUNT(*) FROM horarios WHERE dia = ? AND horario = ?', (dia, h))
                     ocupado = cur.fetchone()[0]
                     limite = self.limiteHorario(h)
                     vagas = max(limite - ocupado, 0)
-                    print(f"  {h}: {ocupado}/{limite} ({vagas} vagas)")
+                    return(f"  {h}: {ocupado}/{limite} ({vagas} vagas)")
 
 def validar_cpf(cpf: str):
     cpf_digits = ''.join(ch for ch in cpf if ch.isdigit())
@@ -319,123 +293,36 @@ def validar_cpf(cpf: str):
     dv2 = 0 if r2 < 2 else 11 - r2
     if dv2 != nums[10]:
         return False
-    return cpf_digits
+    return True
 
-
-def InserirInfosAlunas() -> Optional[Tuple[Aluna, List[Tuple[str, str]]]]:
-    print("==== CADASTRO DE ALUNA ====")
-
-    nome = input("Nome completo:\n").strip()
-    apelido = input("Apelido:\n").strip()
-    nova = bool(input("Aluna sem desconto? (S/N):\n").strip().upper() == "S")
+def verificaHorarios(dia: str, horario: str) -> bool:
+    hora, minuto = map(int, horario.split(":"))
     
-    while True:
-        nascimento = input("Data de nascimento (dd/mm/aaaa):\n").strip()
-        if re.match(r"^\d{2}/\d{2}/\d{4}$", nascimento):
-            break
-        print("Data inválida. Formato: dd/mm/aaaa")
-
-    while True:
-        cep = input("CEP (00000-000):\n").strip()
-        if re.match(r"^\d{5}-\d{3}$", cep):
-            break   
-        print("CEP inválido. Formato: 00000-000")
-        
-    endereco = input("Endereço:\n").strip()
-    bairro = input("Bairro:\n").strip()
-    celular = input("Celular:\n").strip()
-
-    while True:
-        cpf_input = input("CPF:\n").strip()
-        cpf_valid = validar_cpf(cpf_input)
-        if cpf_valid:
-            cpf = cpf_valid
-            break
-        print("CPF inválido. Digite novamente.")
-
-    while True:
-        try:
-            dias = int(input("Quantas vezes por semana?\n"))
-            break
-        except ValueError:
-            print("Insira um número válido.")
-
-    horariosSemana: List[Tuple[str, str]] = []
-    for i in range(dias):
-        print(f"\n=== Aula {i+1} de {dias} ===")
-        while True:
-            dia = input("Dia (segunda a sexta):\n").strip().lower()
-            if dia in ["segunda", "terca", "terça", "quarta", "quinta", "sexta"]:
-                dia = dia.replace("terça", "terca")
-                break
-            print("Dia inválido.")
-        while True:
-            horario = input("Horário (HH:MM):\n").strip()
-            if re.match(r"^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$", horario):
-                pass
-            else:
-                print("Formato inválido. Ex: 06:00.")
-                continue
-            hora, minuto = map(int, horario.split(":"))
-
-            if dia == "segunda" or dia == "quarta":
-                if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
-                    break
-                elif (hora == 11 and minuto == 0) or (hora == 11 and minuto == 30):
-                    break
-                elif (hora >= 14 and minuto == 30) and (hora <= 19 and minuto == 30):
-                    break
-            elif dia == "terca" or dia == "quinta":
-                if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
-                    break
-                elif (hora >= 15 and minuto >= 30) and (hora <= 19 and minuto == 30):
-                    break
-            elif dia == "sexta":
-                if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
-                    break
-                elif (hora == 11 and minuto == 0) or (hora == 11 and minuto == 30):
-                    break
-                elif (hora >= 14 and minuto == 30) and (hora <= 18 and minuto == 30):
-                    break
-            print("Horário indisponível para o dia escolhido.")
-        horariosSemana.append((dia, horario))
-
-    while True:
-        try:
-            if not nova:
-                valor = float(input("Valor da mensalidade:\n").replace(",", "."))
-            elif dias == 2:
-                valor = AlunaNova2x().valorMensalidade()
-            elif dias == 3:
-                valor = AlunaNova3x().valorMensalidade()
-            break
-        except ValueError:
-            print("Número inválido.")
-
-    while True:
-        try:
-            vencimento = int(input("Dia de vencimento:\n"))
-            break
-        except ValueError:
-            print("Número inválido.")
-
-    while True:
-        termo_input = input("Termo assinado? (S/N):\n").strip().upper()
-        if termo_input in ["S", "N"]:
-            termo = termo_input == "S"
-            break
-        print("Digite S ou N.")
-
-    if not termo:
-        print("Termo não assinado. Cadastro cancelado.")
-        return None
-
-    primeiroHorario = horariosSemana[0][1]
-
+    if dia == "segunda" or dia == "quarta":
+        if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
+            return True
+        elif (hora == 11 and minuto == 0) or (hora == 11 and minuto == 30):
+            return True
+        elif (hora >= 14 and minuto == 30) and (hora <= 19 and minuto == 30):
+            return True
+    elif dia == "terca" or dia == "terça" or dia == "quinta":
+        if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
+            return True
+        elif (hora >= 15 and minuto >= 30) and (hora <= 19 and minuto == 30):
+            return True
+    elif dia == "sexta":
+        if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
+            return True
+        elif (hora == 11 and minuto == 0) or (hora == 11 and minuto == 30):
+            return True
+        elif (hora >= 14 and minuto == 30) and (hora <= 18 and minuto == 30):
+            return True
+    return False
+                       
+def InserirInfosAlunas(nome, apelido, nascimento, cep, endereco, bairro, celular, cpf, quantdias, dias, horario, valor, vencimento, termo):
     # Usa o AlunaBuilder para criar a instância 
     try:
         builder = AlunaBuilder() \
-            .nova(nova) \
             .nome(nome) \
             .apelido(apelido) \
             .nascimento(nascimento) \
@@ -444,48 +331,24 @@ def InserirInfosAlunas() -> Optional[Tuple[Aluna, List[Tuple[str, str]]]]:
             .bairro(bairro) \
             .celular(celular) \
             .cpf(cpf) \
-            .dias(dias) \
-            .horario(primeiroHorario) \
+            .dias(quantdias) \
+            .diasSemana(dias) \
+            .horario(horario) \
             .valor(valor) \
             .vencimento(vencimento) \
-            .termo(termo)
+            .termo(termo) \
 
         nova_aluna = builder.build()
     except ValueError as e:
         print("Erro no cadastro:", e)
         return None
-
-    return nova_aluna, horariosSemana
-
+    
+    return nova_aluna
 
 def main():
     academia = Academia()
-
-    while True:
-        print("\n=== MENU ===")
-        print("1 - Cadastrar aluna")
-        print("2 - Listar alunas")
-        print("3 - Ver vagas")
-        print("4 - Sair")
-
-        opcao = input("\nEscolha: ").strip()
-
-        if opcao == "1":
-            result = InserirInfosAlunas()
-            if result:
-                aluna, horarios = result
-                for dia, horario in horarios:
-                    academia.addAlunas(aluna, dia, horario)
-        elif opcao == "2":
-            academia.listaAlunas()
-        elif opcao == "3":
-            academia.mostraVagas()
-        elif opcao == "4":
-            print("Saindo...")
-            break
-        else:
-            print("Opção inválida.")
-
+    novaAluna = AlunaBuilder()
+    ctk.entrada()
 
 if __name__ == "__main__":
     main()
