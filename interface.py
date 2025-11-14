@@ -15,7 +15,16 @@ import database as db #importa o arquivo database.py para manipulação do banco
 #aniversariantes do mês
 #alunas com mensalidades atrasadas
 #criar um banco de dados - ok
-
+imageAdd_ctk = ctk.CTkImage(dark_image= Image.open("imagens/add.png"), size=(30, 30))
+imageAlunas_ctk = ctk.CTkImage(dark_image= Image.open("imagens/alunas.png"), size=(35, 35))
+imageHome_ctk = ctk.CTkImage(dark_image= Image.open("imagens/home.png"), size=(30, 30))
+imageFit_ctk = ctk.CTkImage(dark_image= Image.open("imagens/fit.png"), size=(30, 30))
+imageNiver_ctk = ctk.CTkImage(dark_image= Image.open("imagens/niver.png"), size=(30, 30))
+imagePay_ctk = ctk.CTkImage(dark_image= Image.open("imagens/pay.png"), size=(30, 30))
+imageRemove_ctk = ctk.CTkImage(dark_image= Image.open("imagens/remove.png"), size=(30, 30))
+imageVenc_ctk = ctk.CTkImage(dark_image= Image.open("imagens/venc.png"), size=(30, 30))
+imageVoltar_ctk = ctk.CTkImage(dark_image= Image.open("imagens/voltar.png"), size=(30, 30))
+imageVagas_ctk = ctk.CTkImage(dark_image= Image.open("imagens/vagas.png"), size=(30, 30))
 def formatar_telefone(event):
     if event.keysym not in ('BackSpace', 'Delete') and not event.char:
         return
@@ -123,12 +132,12 @@ def verificar_cep(cep):
 def cadastro(janela):
     novaAluna = db.AlunaBuilder()
     
-    frameCadastro = ctk.CTkFrame(janela, fg_color="transparent", width=1400, height=750)
-    frameCadastro.place(relx=0.5, rely=0.22, anchor=N)
-    widgetCadastro = ctk.CTkFrame(frameCadastro, fg_color= "transparent", width=1400, height=750)
+    frameCadastro = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+    frameCadastro.place(relx=0.5, rely=0.23, anchor=N)
+    widgetCadastro = ctk.CTkFrame(frameCadastro, fg_color= "transparent", width=1450, height=750)
     widgetCadastro.place(relx= 0.5, anchor=N)
     widgetTermo = ctk.CTkFrame(frameCadastro, fg_color= "transparent", width=700, height=150)
-    widgetTermo.place(relx= 0.5, rely=0.32, anchor=N)
+    widgetTermo.place(relx= 0.5, rely=0.33, anchor=N)
     
     labelCadastro = ctk.CTkLabel(widgetCadastro, text="Cadastro", font=("Arial",28))
     labelCadastro.grid(row=0, column=0, columnspan=9, pady= 30)
@@ -155,7 +164,7 @@ def cadastro(janela):
     labelCEP.grid(row=2, column=0, pady=10, sticky=E)
     entryCEP = ctk.CTkEntry(widgetCadastro, font=("Arial", 15))
     entryCEP.grid(row=2, column=1, pady=10, padx= 10, sticky=W)
-    botaoBuscarCEP = ctk.CTkButton(widgetCadastro, text="Buscar CEP", width= 50, command=buscar_cep)
+    botaoBuscarCEP = ctk.CTkButton(widgetCadastro, text="Buscar CEP", width= 50, command= lambda: buscar_cep())
     botaoBuscarCEP.grid(row=2, column=2, pady=10, padx=10, sticky=W)
     
     labelEndereco = ctk.CTkLabel(widgetCadastro, text="Endereço:", font=("Arial", 15))
@@ -212,6 +221,44 @@ def cadastro(janela):
     entryVenc30 = ctk.CTkRadioButton(widgetCadastro, text="30", font=("Arial", 15), variable=vencimento_var, value=30)
     entryVenc30.grid(row=9, column=1, pady=10, padx= 5, sticky=W)
 
+    def continuar():
+        # Validação simples
+        entryNome.configure(border_color="gray")
+        entryCPF.configure(border_color="gray")
+        entryData.configure(border_color="gray")
+        entryNumero.configure(border_color="gray")
+        labelQuantDias.configure(text_color="white")
+        labelVencimento.configure(text_color="white")
+        checkTermo.configure(border_color="gray")
+        if (not entryNome.get().strip()):
+            entryNome.configure(border_color="red")
+            return
+        if not entryCPF.get().strip() or not db.validar_cpf(entryCPF.get()):
+            entryCPF.configure(border_color="red")
+            return
+        if (not entryData.get().strip()):
+            entryData.configure(border_color="red")
+            return
+        if (not entryNumero.get().strip()):
+            entryNumero.configure(border_color="red")
+            return
+        if (not dia_semana.get()):
+            labelQuantDias.configure(text_color="red")
+            return
+        if (not vencimento_var.get()):
+            labelVencimento.configure(text_color="red")
+            return
+        if not checkTermo.get():
+            checkTermo.configure(border_color="red")
+            return
+            
+        widgetCadastro.place_forget()
+        widgetTermo.place_forget()
+
+        # Mostra a nova tela (tabview e botões)
+        tab_view.place(relx=0.5, rely=0.22, anchor=N)
+        frame_botoes.place(relx=0.5, rely=0.88, anchor=N)
+        
     labelContinuar = ctk.CTkButton(widgetCadastro, text="Continuar", font=("Arial", 15), command= lambda: continuar())
     labelContinuar.grid(row = 9, column = 8, pady=10, padx= 10, sticky=E)
 
@@ -224,7 +271,7 @@ def cadastro(janela):
     checkTermo.pack(pady=10, anchor=W)
     
     #novo frame para os horários
-    tab_view = ctk.CTkFrame(janela, fg_color="transparent", width=1400, height=700)
+    tab_view = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
 
     labelHorario = ctk.CTkLabel(tab_view, text="Horários Disponíveis", font=("Arial", 28))
     labelHorario.grid(row=0, column=0, columnspan=9, pady= 30)
@@ -250,10 +297,10 @@ def cadastro(janela):
     labelverificacao.grid(row=4, column=4, columnspan=2, pady=30)
     
     # frame para os botões Voltar/Enviar
-    frame_botoes = ctk.CTkFrame(janela, fg_color="transparent", height=100, width=1400)
+    frame_botoes = ctk.CTkFrame(janela, fg_color="transparent", height=100, width=1450)
     botao_voltar = ctk.CTkButton(frame_botoes, text="Voltar", font=("Arial", 15), command=lambda: voltar())
     botao_voltar.pack(side="left", padx=20, pady=15)
-    botao_enviar = ctk.CTkButton(frame_botoes, text="Enviar", font=("Arial", 15), command=enviar_dados)
+    botao_enviar = ctk.CTkButton(frame_botoes, text="Enviar", font=("Arial", 15), command=lambda: enviar_dados())
     botao_enviar.pack(side="right", padx=20, pady=15)
     
     def buscar_cep():
@@ -311,7 +358,7 @@ def cadastro(janela):
         entryCPF.configure(border_color="gray")
         entryData.configure(border_color="gray")
         entryNumero.configure(border_color="gray")
-        labelVencimento.configure(text_color="black")
+        labelVencimento.configure(text_color="gray")
         checkTermo.configure(border_color="gray")
         
     def enviar_dados():
@@ -350,44 +397,6 @@ def cadastro(janela):
         else:
             print("Erro ao enviar os dados.")
 
-    def continuar():
-        # Validação simples
-        entryNome.configure(border_color="gray")
-        entryCPF.configure(border_color="gray")
-        entryData.configure(border_color="gray")
-        entryNumero.configure(border_color="gray")
-        labelQuantDias.configure(border_color="gray")
-        labelVencimento.configure(text_color="black")
-        checkTermo.configure(border_color="gray")
-        if (not entryNome.get().strip()):
-            entryNome.configure(border_color="red")
-            return
-        if not entryCPF.get().strip() or not db.validar_cpf(entryCPF.get()):
-            entryCPF.configure(border_color="red")
-            return
-        if (not entryData.get().strip()):
-            entryData.configure(border_color="red")
-            return
-        if (not entryNumero.get().strip()):
-            entryNumero.configure(border_color="red")
-            return
-        if (not dia_semana.get()):
-            labelQuantDias.configure(text_color="red")
-            return
-        if (not vencimento_var.get()):
-            labelVencimento.configure(text_color="red")
-            return
-        if not checkTermo.get():
-            checkTermo.configure(border_color="red")
-            return
-            
-        widgetCadastro.place_forget()
-        widgetTermo.place_forget()
-
-        # Mostra a nova tela (tabview e botões)
-        tab_view.place(relx=0.5, rely=0.22, anchor=N)
-        frame_botoes.place(relx=0.5, rely=0.88, anchor=N)
-
     def voltar():
         # Esconde a tela de horários
         tab_view.place_forget()
@@ -401,8 +410,8 @@ def cadastro(janela):
         
 def vagasDisponiveis(janela):
     academia = db.Academia()
-    widgetVagas = ctk.CTkFrame(janela, fg_color="transparent", width=1400, height=750)
-    widgetVagas.place(relx=0.5, rely=0.57, anchor=CENTER, relwidth=0.9, relheight=0.7)
+    widgetVagas = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+    widgetVagas.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
     widgetVagas.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
     widgetVagas.grid_rowconfigure(1, weight=1)
     
@@ -427,7 +436,7 @@ def vagasDisponiveis(janela):
     weekdays = ["segunda", "terça", "quarta", "quinta", "sexta"]
 
     for j, dia in enumerate(weekdays, start=0):
-        vagas_do_dia = academia.mostraVagas(dia) # Isso agora retorna a lista completa
+        vagas_do_dia = academia.mostraVagas(dia)
 
         if not vagas_do_dia:
             text = "Todos os horários estão disponíveis"
@@ -447,16 +456,16 @@ def vagasDisponiveis(janela):
 
 def mensalidades_vencidas(janela):
     academia = db.Academia()
-    widgetMensalidades = ctk.CTkFrame(janela, fg_color="transparent", width=1400, height=750)
-    widgetMensalidades.place(relx=0.5, rely=0.57, anchor=CENTER, relwidth=0.9, relheight=0.7)
+    widgetMensalidades = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+    widgetMensalidades.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
     label = ctk.CTkLabel(widgetMensalidades, text="Página de Mensalidades", font=("Arial", 30))
     label.pack(pady=100)
     return widgetMensalidades
     
 def lista_alunas(janela):
     academia = db.Academia()
-    widgetLista = ctk.CTkFrame(janela, fg_color="transparent", width=1400, height=750)
-    widgetLista.place(relx=0.5, rely=0.57, anchor=CENTER, relwidth=0.9, relheight=0.7)
+    widgetLista = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+    widgetLista.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
     widgetLista.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
     widgetLista.grid_rowconfigure(1, weight=1)
     
@@ -501,7 +510,7 @@ def lista_alunas(janela):
         entryVencimento.grid(row=i, column=6, padx=5, pady=5)
 
     return widgetLista
-    
+
 def entrada():
     janela = ctk.CTk()
     screen_width = janela.winfo_screenwidth()
@@ -526,7 +535,6 @@ def entrada():
         img_pequena = Image.open("imagens/lu_mafra.png").resize((imagem_largura_p, imagem_altura_p))
         img_pequena_dark = Image.open("imagens/lu_mafra2.png").resize((imagem_largura_p, imagem_altura_p))
         labelImagemPequena = ctk.CTkImage(light_image=img_pequena, dark_image=img_pequena_dark, size=(imagem_largura_p, imagem_altura_p))
-
     except FileNotFoundError:
         print("ERRO CRÍTICO: Imagens 'lu_mafra.png' ou 'lu_mafra2.png' não encontradas.")
         labelImagemGrande = None
@@ -542,19 +550,18 @@ def entrada():
     label_titulo = ctk.CTkLabel(widget1, text="Lu Mafra Personal Trainer", font=("Arial", 30, "bold"), text_color="light green" if set_theme == "Dark" else "green")
     label_titulo.pack()
 
-    # widget3 (Container do Logo)
-    widget3 = ctk.CTkFrame(janela, fg_color="transparent")
-    label_da_imagem = ctk.CTkLabel(widget3, text="")
+    # widget2 (Container do Logo)
+    widget2 = ctk.CTkFrame(janela, fg_color="transparent")
+    label_da_imagem = ctk.CTkLabel(widget2, text="")
     if labelImagemGrande:
         label_da_imagem.configure(image=labelImagemGrande)
     else:
         label_da_imagem.configure(text="Imagem não encontrada")
     label_da_imagem.pack()
-
-    # widget2 (Container do Menu)
-    botao_largura = int(screen_width * 0.1)
+    
+    # widget3 (Container do Menu)
     botao_altura = int(screen_height * 0.02)
-    widget2 = ctk.CTkFrame(janela, fg_color="transparent")
+    widget3 = ctk.CTkFrame(janela, fg_color="transparent")
 
     #funções de navegação entre páginas
     def go_home():        
@@ -565,8 +572,8 @@ def entrada():
             
         #Restaura o layout da "Home"
         widget1.place(relx=0.5, rely=0.15, anchor=CENTER) # Mostra o Título
-        widget2.place(relx=0.5, rely=0.30, anchor=CENTER) # Move o Menu para o centro
-        widget3.place(relx=0.5, rely=0.55, anchor=CENTER) # Move o Logo para o centro
+        widget2.place(relx=0.5, rely=0.55, anchor=CENTER) # Move o Logo para o centro
+        widget3.place(relx=0.5, rely=0.30, anchor=CENTER) # Move o Menu para o centro
         
         #Restaura a imagem grande
         if labelImagemGrande:
@@ -585,8 +592,9 @@ def entrada():
         widget1.place_forget()
         
         #Move o Menu e o Logo para o TOPO
-        widget2.place(relx=0.5, rely=0.18, anchor=N)
-        widget3.place(relx=0.5, rely=0.02, anchor=N)
+        widget3.place(relx=0.5, rely=0.16, anchor=N)
+        widget3.rowconfigure(1, weight=0)
+        widget2.place(relx=0.5, rely=0.02, anchor=N)
         
         #Muda para a imagem pequena
         if labelImagemPequena:
@@ -599,19 +607,27 @@ def entrada():
         app_state["active_page_frame"] = page_function(janela)
 
     #botões do menu
-    botao_cadastro = ctk.CTkButton(widget2, width=botao_largura, height=botao_altura, text="Cadastro", font=("Arial", 18), command=lambda: clear_and_show_page(cadastro))
+    botao_cadastro = ctk.CTkButton(widget3, image= imageAdd_ctk, width=imageAdd_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(cadastro))
     botao_cadastro.grid(row=1, column=0, padx=5, pady=5)
+    labelCadastro = ctk.CTkLabel(widget3, text= "Cadastro", font= ("Segoe UI Black", 18))
+    labelCadastro.grid(row = 2, column=0, padx=5, pady=5)
     
-    botao_vagas = ctk.CTkButton(widget2, width=botao_largura, height=botao_altura, text="Vagas Disponíveis", font=("Arial", 18), command=lambda: clear_and_show_page(vagasDisponiveis))
+    botao_vagas = ctk.CTkButton(widget3, image= imageVagas_ctk, width=imageVagas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(vagasDisponiveis))
     botao_vagas.grid(row=1, column=1, padx=5, pady=5)
+    labelVagas = ctk.CTkLabel(widget3, text= "Vagas Disponíveis", font= ("Segoe UI Black", 18))
+    labelVagas.grid(row=2, column=1, padx=5, pady=5)
 
-    botao_mensalidades = ctk.CTkButton(widget2, width=botao_largura, height=botao_altura, text="Mensalidades Vencidas", font=("Arial", 18), command=lambda: clear_and_show_page(mensalidades_vencidas))
+    botao_mensalidades = ctk.CTkButton(widget3, image= imageVenc_ctk, width=imageVenc_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(mensalidades_vencidas))
     botao_mensalidades.grid(row=1, column=2, padx=5, pady=5)
+    labelMensalidades = ctk.CTkLabel(widget3, text= "Mensalidades", font= ("Segoe UI Black", 18))
+    labelMensalidades.grid(row=2, column=2, padx=5, pady=5)
 
-    botao_lista = ctk.CTkButton(widget2, width=botao_largura, height=botao_altura, text="Lista de Alunas", font=("Arial", 18), command=lambda: clear_and_show_page(lista_alunas))
+    botao_lista = ctk.CTkButton(widget3, image= imageAlunas_ctk, width=imageAlunas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(lista_alunas))
     botao_lista.grid(row=1, column=3, padx=5, pady=5)
+    labelLista = ctk.CTkLabel(widget3, text= "Lista de Alunas", font= ("Segoe UI Black", 18))
+    labelLista.grid(row=2, column=3, padx=5, pady=5)
     
-    botao_inicio = ctk.CTkButton(widget2, width=botao_largura, height=botao_altura, text="Início", font=("Arial", 18), command=go_home)
+    botao_inicio = ctk.CTkButton(widget3, image= imageHome_ctk, width=imageHome_ctk.__sizeof__(), height=botao_altura , text="", fg_color="transparent", command=go_home)
 
     botao_sair = ctk.CTkButton(janela, text="Sair", command=janela.quit)
     botao_sair.pack(side="bottom", pady=10)
@@ -620,3 +636,6 @@ def entrada():
     go_home() 
     
     janela.mainloop()
+
+if __name__ == "__main__":
+    entrada()
