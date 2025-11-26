@@ -25,6 +25,8 @@ imageRemove_ctk = ctk.CTkImage(dark_image= Image.open("imagens/remove.png"), siz
 imageVenc_ctk = ctk.CTkImage(dark_image= Image.open("imagens/venc.png"), size=(30, 30))
 imageVoltar_ctk = ctk.CTkImage(dark_image= Image.open("imagens/voltar.png"), size=(30, 30))
 imageVagas_ctk = ctk.CTkImage(dark_image= Image.open("imagens/vagas.png"), size=(30, 30))
+imageInput_ctk = ctk.CTkImage(dark_image= Image.open("imagens/input.png"), size=(30, 30))
+
 def formatar_telefone(event):
     if event.keysym not in ('BackSpace', 'Delete') and not event.char:
         return
@@ -139,7 +141,7 @@ def cadastro(janela):
     widgetTermo = ctk.CTkFrame(frameCadastro, fg_color= "transparent", width=700, height=150)
     widgetTermo.place(relx= 0.5, rely=0.33, anchor=N)
     
-    labelCadastro = ctk.CTkLabel(widgetCadastro, text="Cadastro", font=("Arial",28))
+    labelCadastro = ctk.CTkLabel(widgetCadastro, text="Cadastro", font=("Segoe UI Black",28))
     labelCadastro.grid(row=0, column=0, columnspan=9, pady= 30)
     
     #linha 1 - Nome, Apelido, Data de Nascimento
@@ -190,12 +192,24 @@ def cadastro(janela):
     entryCPF.grid(row=3, column=1, pady=10, padx= 10, sticky=W)
     entryCPF.bind("<KeyRelease>", formatar_cpf)
 
+    def defineDia(entrada):
+        if entrada == 2:
+            entryMensalidade.delete(0, ctk.END)
+            entryMensalidade.insert(0, valor(dia_semana.get()))
+            entryDiasSemana3.grid_forget()
+            entryHorario3.grid_forget()
+        elif entrada == 3:
+            entryMensalidade.delete(0, ctk.END)
+            entryMensalidade.insert(0, valor(dia_semana.get()))
+            entryDiasSemana3.grid(row=3, column=4, pady= 30)
+            entryHorario3.grid(row=3, column=5, pady= 30)
+            
     dia_semana = IntVar()
     labelQuantDias = ctk.CTkLabel(widgetCadastro, text="Quantidade de Dias:", font=("Arial", 15))
     labelQuantDias.grid(row=3, column=3, pady=10, padx= 10, sticky=E)
-    entry2 = ctk.CTkRadioButton(widgetCadastro, text="2x", font=("Arial", 15), variable=dia_semana, value=2, command=lambda: entryMensalidade.delete(0, ctk.END) or entryMensalidade.insert(0, valor(dia_semana.get())) or entryDiasSemana3.grid_forget() or entryHorario3.grid_forget())
+    entry2 = ctk.CTkRadioButton(widgetCadastro, text="2x", font=("Arial", 15), variable=dia_semana, value=2, command=lambda: defineDia(2))
     entry2.grid(row=3, column=4, pady=10, sticky=W)
-    entry3 = ctk.CTkRadioButton(widgetCadastro, text="3x", font=("Arial", 15), variable=dia_semana, value=3, command=lambda: entryMensalidade.delete(0, ctk.END) or entryMensalidade.insert(0, valor(dia_semana.get())) or entryDiasSemana3.grid(row=3, column=4, pady= 30) or entryHorario3.grid(row=3, column=5, pady= 30))
+    entry3 = ctk.CTkRadioButton(widgetCadastro, text="3x", font=("Arial", 15), variable=dia_semana, value=3, command=lambda: defineDia(3))
     entry3.grid(row=3, column=5, pady=10, padx= 5, sticky=W)
         
     labelMensalidade = ctk.CTkLabel(widgetCadastro, text="Valor da Mensalidade:", font=("Arial", 15))
@@ -221,6 +235,14 @@ def cadastro(janela):
     entryVenc30 = ctk.CTkRadioButton(widgetCadastro, text="30", font=("Arial", 15), variable=vencimento_var, value=30)
     entryVenc30.grid(row=9, column=1, pady=10, padx= 5, sticky=W)
 
+    labelTermo = ctk.CTkLabel(widgetTermo, text="Termo de Responsabilidade para Prática de Atividade Física", font=("Arial", 20))
+    labelTermo.pack(pady=20)
+    labelContrato = ctk.CTkLabel(widgetTermo, text="Estou ciente de que é recomendável conversar com um médico antes de aumentar meu nível atual de atividade física, tenho pleno conhecimento da minha atual condição de saúde. Sei também que a realização de atividades físicas pode acarretar algum risco, caso existam problemas clínicos que a contraindiquem total ou parcialmente. Assumo plena responsabilidade por qualquer atividade física praticada sem o atendimento a essa recomendação e DECLARO que aceito as responsabilidades inerentes à participação no treino, bem como isento de qualquer responsabilidade a \"Lu Mafra Personal Trainer\".\n\nConcorda com o Termo de Responsabilidade para Prática de Atividade Física?", font=("Arial", 18), wraplength=950, justify= "left")
+    labelContrato.pack(pady=10)
+    
+    checkTermo = ctk.CTkCheckBox(widgetTermo, text="Concordo", font=("Arial", 15))
+    checkTermo.pack(pady=10, anchor=W)
+    
     def continuar():
         # Validação simples
         entryNome.configure(border_color="gray")
@@ -256,44 +278,46 @@ def cadastro(janela):
         widgetTermo.place_forget()
 
         # Mostra a nova tela (tabview e botões)
-        tab_view.place(relx=0.5, rely=0.22, anchor=N)
+        frameHorarios.place(relx=0.5, rely=0.22, anchor=N)
         frame_botoes.place(relx=0.5, rely=0.88, anchor=N)
         
     labelContinuar = ctk.CTkButton(widgetCadastro, text="Continuar", font=("Arial", 15), command= lambda: continuar())
     labelContinuar.grid(row = 9, column = 8, pady=10, padx= 10, sticky=E)
-
-    labelTermo = ctk.CTkLabel(widgetTermo, text="Termo de Responsabilidade para Prática de Atividade Física", font=("Arial", 20))
-    labelTermo.pack(pady=20)
-    labelContrato = ctk.CTkLabel(widgetTermo, text="Estou ciente de que é recomendável conversar com um médico antes de aumentar meu nível atual de atividade física, tenho pleno conhecimento da minha atual condição de saúde. Sei também que a realização de atividades físicas pode acarretar algum risco, caso existam problemas clínicos que a contraindiquem total ou parcialmente. Assumo plena responsabilidade por qualquer atividade física praticada sem o atendimento a essa recomendação e DECLARO que aceito as responsabilidades inerentes à participação no treino, bem como isento de qualquer responsabilidade a \"Lu Mafra Personal Trainer\".\n\nConcorda com o Termo de Responsabilidade para Prática de Atividade Física?", font=("Arial", 18), wraplength=950, justify= "left")
-    labelContrato.pack(pady=10)
-    
-    checkTermo = ctk.CTkCheckBox(widgetTermo, text="Concordo", font=("Arial", 15))
-    checkTermo.pack(pady=10, anchor=W)
     
     #novo frame para os horários
-    tab_view = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+    frameHorarios = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
 
-    labelHorario = ctk.CTkLabel(tab_view, text="Horários Disponíveis", font=("Arial", 28))
+    labelHorario = ctk.CTkLabel(frameHorarios, text="Horários Disponíveis", font=("Segoe UI Black", 28))
     labelHorario.grid(row=0, column=0, columnspan=9, pady= 30)
 
-    entryHorario1 = ctk.CTkEntry(tab_view, placeholder_text="Digite o horário (ex: 18:00)", font=("Arial", 15))
-    entryHorario1.grid(row=1, column=5, pady= 30)
-    entryHorario2 = ctk.CTkEntry(tab_view, placeholder_text="Digite o horário (ex: 18:00)", font=("Arial", 15))
-    entryHorario2.grid(row=2, column=5, pady= 30)
-    entryHorario3 = ctk.CTkEntry(tab_view, placeholder_text="Digite o horário (ex: 18:00)", font=("Arial", 15))
-    entryHorario3.grid(row=3, column=5, pady= 30)
-
-    labelDias = ctk.CTkLabel(tab_view, text="Selecione os dias da semana:   ", font=("Arial", 15))
+    labelDias = ctk.CTkLabel(frameHorarios, text="Selecione os dias da semana:   ", font=("Arial", 15))
     labelDias.grid(row=1, column=3, pady= 30)
 
-    entryDiasSemana1 = ctk.CTkComboBox(tab_view, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15))
-    entryDiasSemana1.grid(row=1, column=4, pady= 30)
-    entryDiasSemana2 = ctk.CTkComboBox(tab_view, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15))
-    entryDiasSemana2.grid(row=2, column=4, pady= 30)
-    entryDiasSemana3 = ctk.CTkComboBox(tab_view, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15))
-    entryDiasSemana3.grid(row=3, column=4, pady= 30)
-    
-    labelverificacao = ctk.CTkLabel(tab_view, text="", font=("Arial", 15))
+    entryDiasSemana1 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15))
+    entryDiasSemana2 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15))
+    entryDiasSemana3 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15))
+
+    if dia_semana.get() == 2:
+        entryDiasSemana1.grid(row=1, column=4, pady= 30)
+        entryDiasSemana2.grid(row=2, column=4, pady= 30)
+    elif dia_semana.get() == 3:
+        entryDiasSemana1.grid(row=1, column=4, pady= 30)
+        entryDiasSemana2.grid(row=2, column=4, pady= 30)
+        entryDiasSemana3.grid(row=3, column=4, pady= 30)
+        
+    entryHorario1 = ctk.CTkComboBox(frameHorarios, font=("Arial", 15))
+    entryHorario2 = ctk.CTkComboBox(frameHorarios, font=("Arial", 15))
+    entryHorario3 = ctk.CTkComboBox(frameHorarios, font=("Arial", 15))
+
+    if dia_semana.get() == 2:
+        entryHorario1.grid(row=1, column=5, pady= 30)
+        entryHorario2.grid(row=2, column=5, pady= 30)
+    elif dia_semana.get() == 3:
+        entryHorario1.grid(row=1, column=5, pady= 30)
+        entryHorario2.grid(row=2, column=5, pady= 30)
+        entryHorario3.grid(row=3, column=5, pady= 30)
+        
+    labelverificacao = ctk.CTkLabel(frameHorarios, text="", font=("Arial", 15))
     labelverificacao.grid(row=4, column=4, columnspan=2, pady=30)
     
     # frame para os botões Voltar/Enviar
@@ -390,7 +414,7 @@ def cadastro(janela):
         nova_aluna = db.InserirInfosAlunas(nome, apelido, nascimento, cep, endereco, bairro, celular, cpf, quantdias, dias, horario, valor_mensalidade, vencimento, termo)
         if nova_aluna:
             text = db.Academia().addAlunas(nova_aluna)
-            label = ctk.CTkLabel(tab_view, text="", font=("Arial", 15))
+            label = ctk.CTkLabel(frameHorarios, text="", font=("Arial", 15))
             label.grid(row=5, column=4, columnspan=2, pady=30)
             label.configure(text=text, text_color="green")
             label.after(3000, lambda: (label.destroy(), voltar(), limpaInfo()))
@@ -399,7 +423,7 @@ def cadastro(janela):
 
     def voltar():
         # Esconde a tela de horários
-        tab_view.place_forget()
+        frameHorarios.place_forget()
         frame_botoes.place_forget()
 
         # Re-exibe a tela de cadastro
@@ -415,7 +439,7 @@ def vagasDisponiveis(janela):
     widgetVagas.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
     widgetVagas.grid_rowconfigure(1, weight=1)
     
-    label = ctk.CTkLabel(widgetVagas, text="Vagas Disponíveis", font=("Arial", 30))
+    label = ctk.CTkLabel(widgetVagas, text="Vagas Disponíveis", font=("Segoe UI Black", 30))
     label.grid(row=0, column=0, columnspan=5, padx=5, pady=20)
     
     scroll_frame = ctk.CTkScrollableFrame(widgetVagas, fg_color="transparent")
@@ -458,7 +482,7 @@ def mensalidades_vencidas(janela):
     academia = db.Academia()
     widgetMensalidades = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
     widgetMensalidades.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
-    label = ctk.CTkLabel(widgetMensalidades, text="Página de Mensalidades", font=("Arial", 30))
+    label = ctk.CTkLabel(widgetMensalidades, text="Página de Mensalidades", font=("Segoe UI Black", 30))
     label.pack(pady=100)
     return widgetMensalidades
     
@@ -469,7 +493,7 @@ def lista_alunas(janela):
     widgetLista.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
     widgetLista.grid_rowconfigure(1, weight=1)
     
-    label = ctk.CTkLabel(widgetLista, text="Lista de Alunas", font=("Arial", 30))
+    label = ctk.CTkLabel(widgetLista, text="Lista de Alunas", font=("Segoe UI Black", 30))
     label.grid(row=0, column=0, columnspan=7, padx=5, pady=20)
 
     scroll_frame = ctk.CTkScrollableFrame(widgetLista, fg_color="transparent")
@@ -510,7 +534,7 @@ def lista_alunas(janela):
         entryVencimento.grid(row=i, column=6, padx=5, pady=5)
 
     return widgetLista
-
+    
 def entrada():
     janela = ctk.CTk()
     screen_width = janela.winfo_screenwidth()
@@ -546,23 +570,25 @@ def entrada():
 
     # widget1 (Título da Home)
     widget1 = ctk.CTkFrame(janela, fg_color="transparent")
+    widget1.place(relx=0.5, rely=0.15, anchor=CENTER)
     set_theme = ctk.get_appearance_mode()
     label_titulo = ctk.CTkLabel(widget1, text="Lu Mafra Personal Trainer", font=("Arial", 30, "bold"), text_color="light green" if set_theme == "Dark" else "green")
     label_titulo.pack()
-
+    
     # widget2 (Container do Logo)
     widget2 = ctk.CTkFrame(janela, fg_color="transparent")
+    widget2.place(relx=0.65, rely=0.5, anchor=CENTER)
     label_da_imagem = ctk.CTkLabel(widget2, text="")
     if labelImagemGrande:
         label_da_imagem.configure(image=labelImagemGrande)
     else:
         label_da_imagem.configure(text="Imagem não encontrada")
     label_da_imagem.pack()
-    
+
     # widget3 (Container do Menu)
     botao_altura = int(screen_height * 0.02)
     widget3 = ctk.CTkFrame(janela, fg_color="transparent")
-
+            
     #funções de navegação entre páginas
     def go_home():        
         #Destrói a página ativa
@@ -575,6 +601,7 @@ def entrada():
         widget2.place(relx=0.5, rely=0.55, anchor=CENTER) # Move o Logo para o centro
         widget3.place(relx=0.5, rely=0.30, anchor=CENTER) # Move o Menu para o centro
         
+        label_titulo.configure(text="Bem vinda ao site da Lu Mafra Personal Trainer")
         #Restaura a imagem grande
         if labelImagemGrande:
             label_da_imagem.configure(image=labelImagemGrande)
@@ -592,7 +619,7 @@ def entrada():
         widget1.place_forget()
         
         #Move o Menu e o Logo para o TOPO
-        widget3.place(relx=0.5, rely=0.16, anchor=N)
+        widget3.place(relx=0.5, rely=0.17, anchor=N)
         widget3.rowconfigure(1, weight=0)
         widget2.place(relx=0.5, rely=0.02, anchor=N)
         
@@ -607,33 +634,53 @@ def entrada():
         app_state["active_page_frame"] = page_function(janela)
 
     #botões do menu
-    botao_cadastro = ctk.CTkButton(widget3, image= imageAdd_ctk, width=imageAdd_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(cadastro))
+    botao_cadastro = ctk.CTkButton(widget3, image= imageAdd_ctk, hover_color= "#292B25", width=imageAdd_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(cadastro))
     botao_cadastro.grid(row=1, column=0, padx=5, pady=5)
     labelCadastro = ctk.CTkLabel(widget3, text= "Cadastro", font= ("Segoe UI Black", 18))
     labelCadastro.grid(row = 2, column=0, padx=5, pady=5)
     
-    botao_vagas = ctk.CTkButton(widget3, image= imageVagas_ctk, width=imageVagas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(vagasDisponiveis))
+    botao_vagas = ctk.CTkButton(widget3, image= imageVagas_ctk, hover_color= "#292B25", width=imageVagas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(vagasDisponiveis))
     botao_vagas.grid(row=1, column=1, padx=5, pady=5)
     labelVagas = ctk.CTkLabel(widget3, text= "Vagas Disponíveis", font= ("Segoe UI Black", 18))
     labelVagas.grid(row=2, column=1, padx=5, pady=5)
 
-    botao_mensalidades = ctk.CTkButton(widget3, image= imageVenc_ctk, width=imageVenc_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(mensalidades_vencidas))
+    botao_mensalidades = ctk.CTkButton(widget3, image= imageVenc_ctk, hover_color= "#292B25", width=imageVenc_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(mensalidades_vencidas))
     botao_mensalidades.grid(row=1, column=2, padx=5, pady=5)
     labelMensalidades = ctk.CTkLabel(widget3, text= "Mensalidades", font= ("Segoe UI Black", 18))
     labelMensalidades.grid(row=2, column=2, padx=5, pady=5)
 
-    botao_lista = ctk.CTkButton(widget3, image= imageAlunas_ctk, width=imageAlunas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(lista_alunas))
+    botao_lista = ctk.CTkButton(widget3, image= imageAlunas_ctk, hover_color= "#292B25", width=imageAlunas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(lista_alunas))
     botao_lista.grid(row=1, column=3, padx=5, pady=5)
     labelLista = ctk.CTkLabel(widget3, text= "Lista de Alunas", font= ("Segoe UI Black", 18))
     labelLista.grid(row=2, column=3, padx=5, pady=5)
     
-    botao_inicio = ctk.CTkButton(widget3, image= imageHome_ctk, width=imageHome_ctk.__sizeof__(), height=botao_altura , text="", fg_color="transparent", command=go_home)
+    botao_inicio = ctk.CTkButton(widget3, image= imageHome_ctk, hover_color= "#292B25", width=imageHome_ctk.__sizeof__(), height=botao_altura , text="", fg_color="transparent", command=go_home)
 
-    botao_sair = ctk.CTkButton(janela, text="Sair", command=janela.quit)
+    botao_sair = ctk.CTkButton(janela, text="Sair", hover_color= "#292B25", command=janela.quit)
     botao_sair.pack(side="bottom", pady=10)
     
-    # Chama 'go_home()' uma vez para configurar o estado inicial
-    go_home() 
+    widgetAutenticacao = ctk.CTkFrame(janela, fg_color="transparent")
+    labelUser = ctk.CTkLabel(widgetAutenticacao, text="Usuário:", font=("Segoe UI Black", 20))
+    labelUser.grid(row=0, column=0, padx=5, pady=5)
+    entryUser = ctk.CTkEntry(widgetAutenticacao, font=("Arial", 20))
+    entryUser.grid(row=0, column=1, padx=5, pady=5)
+    labelSenha = ctk.CTkLabel(widgetAutenticacao, text="Senha:", font=("Segoe UI Black", 20))
+    labelSenha.grid(row=1, column=0, padx=5, pady=5)
+    entrySenha = ctk.CTkEntry(widgetAutenticacao, font=("Arial", 20), show="*")
+    entrySenha.grid(row=1, column=1, padx=5, pady=5)
+    
+    def autenticar():
+        if entryUser.get() == "admin" and entrySenha.get() == "admin":
+            widgetAutenticacao.place_forget()
+            go_home()
+        else:
+            erro_label = ctk.CTkLabel(janela, text="Usuário ou senha incorretos.", text_color="red", font=("Arial", 20))
+            erro_label.place(relx=0.5, rely=0.6, anchor=CENTER)
+            erro_label.after(2000, erro_label.destroy)
+    
+    botaoLogin = ctk.CTkButton(widgetAutenticacao, image=imageInput_ctk, hover_color= "#292B25", width=imageInput_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: autenticar())
+    botaoLogin.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
+    widgetAutenticacao.place(relx=0.35, rely=0.5, anchor=CENTER)
     
     janela.mainloop()
 
