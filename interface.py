@@ -281,6 +281,19 @@ def cadastro(janela):
         frameHorarios.place(relx=0.5, rely=0.22, anchor=N)
         frame_botoes.place(relx=0.5, rely=0.88, anchor=N)
         
+        if dia_semana.get() == 2:
+            entryDiasSemana1.grid(row=2, column=3, pady= 30)
+            entryHorario1.grid(row=2, column=4, pady= 30)
+            entryDiasSemana2.grid(row=2, column=5, pady= 30)
+            entryHorario2.grid(row=2, column=6, pady= 30)
+        elif dia_semana.get() == 3:
+            entryDiasSemana1.grid(row=2, column=2, pady= 30)
+            entryHorario1.grid(row=2, column=3, pady= 30)
+            entryDiasSemana2.grid(row=2, column=4, pady= 30)
+            entryHorario2.grid(row=2, column=5, pady= 30)
+            entryDiasSemana3.grid(row=3, column=3, pady= 30)
+            entryHorario3.grid(row=3, column=4, pady= 30)
+        
     labelContinuar = ctk.CTkButton(widgetCadastro, text="Continuar", font=("Arial", 15), command= lambda: continuar())
     labelContinuar.grid(row = 9, column = 8, pady=10, padx= 10, sticky=E)
     
@@ -290,33 +303,36 @@ def cadastro(janela):
     labelHorario = ctk.CTkLabel(frameHorarios, text="Horários Disponíveis", font=("Segoe UI Black", 28))
     labelHorario.grid(row=0, column=0, columnspan=9, pady= 30)
 
-    labelDias = ctk.CTkLabel(frameHorarios, text="Selecione os dias da semana:   ", font=("Arial", 15))
-    labelDias.grid(row=1, column=3, pady= 30)
+    labelDias = ctk.CTkLabel(frameHorarios, text="Selecione os dias da semana e o horário:", font=("Arial", 15))
+    labelDias.grid(row=1, column=4, pady= 30)
 
-    entryDiasSemana1 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15))
-    entryDiasSemana2 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15))
-    entryDiasSemana3 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15))
-
-    if dia_semana.get() == 2:
-        entryDiasSemana1.grid(row=1, column=4, pady= 30)
-        entryDiasSemana2.grid(row=2, column=4, pady= 30)
-    elif dia_semana.get() == 3:
-        entryDiasSemana1.grid(row=1, column=4, pady= 30)
-        entryDiasSemana2.grid(row=2, column=4, pady= 30)
-        entryDiasSemana3.grid(row=3, column=4, pady= 30)
+    entryDiasSemana1 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), default_value="Selecione um dia", command=lambda dia: defineHorario(entryDiasSemana1, entryHorario1))
+    entryDiasSemana2 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), default_value="Selecione um dia", command=lambda dia: defineHorario(entryDiasSemana2, entryHorario2))
+    entryDiasSemana3 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), default_value="Selecione um dia", command=lambda dia: defineHorario(entryDiasSemana3, entryHorario3))
+    
+    def defineHorario(entryDia, entryHorario):
+        horarios = []
+        if entryDia.get() == "Segunda":
+            horarios = ['06:00', '07:00', '08:00', '09:00', '11:00', '11:30', '14:30', '15:30', '16:30', '17:30', '18:30', '19:30']
+        elif entryDia.get() == "Terça":
+            horarios = ['06:00', '07:00', '08:00', '09:00', '15:30', '16:30', '17:30', '18:30', '19:30']
+        elif entryDia.get() == "Quarta":
+            horarios = ['06:00', '07:00', '08:00', '09:00', '11:00', '11:30', '14:30', '15:30', '16:30', '17:30', '18:30', '19:30']
+        elif entryDia.get() == "Quinta":
+            horarios = ['06:00', '07:00', '08:00', '09:00', '15:30', '16:30', '17:30', '18:30', '19:30']
+        elif entryDia.get() == "Sexta":
+            horarios = ['06:00', '07:00', '08:00', '09:00', '11:00', '11:30', '14:30', '15:30', '16:30', '17:30', '18:30']
         
-    entryHorario1 = ctk.CTkComboBox(frameHorarios, font=("Arial", 15))
-    entryHorario2 = ctk.CTkComboBox(frameHorarios, font=("Arial", 15))
-    entryHorario3 = ctk.CTkComboBox(frameHorarios, font=("Arial", 15))
-
-    if dia_semana.get() == 2:
-        entryHorario1.grid(row=1, column=5, pady= 30)
-        entryHorario2.grid(row=2, column=5, pady= 30)
-    elif dia_semana.get() == 3:
-        entryHorario1.grid(row=1, column=5, pady= 30)
-        entryHorario2.grid(row=2, column=5, pady= 30)
-        entryHorario3.grid(row=3, column=5, pady= 30)
+        if entryDia.get() == "Selecione um dia":
+            horarios = []
+            
+        entryHorario.configure(values= horarios)
+        entryHorario.set("Selecione um horário")
         
+    entryHorario1 = ctk.CTkComboBox(frameHorarios, values= [], font=("Arial", 15), default_value="Selecione um horário")
+    entryHorario2 = ctk.CTkComboBox(frameHorarios, values= [], font=("Arial", 15), default_value="Selecione um horário")
+    entryHorario3 = ctk.CTkComboBox(frameHorarios, values= [], font=("Arial", 15), default_value="Selecione um horário")
+    
     labelverificacao = ctk.CTkLabel(frameHorarios, text="", font=("Arial", 15))
     labelverificacao.grid(row=4, column=4, columnspan=2, pady=30)
     
@@ -372,11 +388,11 @@ def cadastro(janela):
         checkTermo.deselect()  
         
         entryDiasSemana1.set("")
-        entryHorario1.delete(0, ctk.END)
+        entryHorario1.set("")
         entryDiasSemana2.set("")
-        entryHorario2.delete(0, ctk.END)
+        entryHorario2.set("")
         entryDiasSemana3.set("")
-        entryHorario3.delete(0, ctk.END)
+        entryHorario3.set("")
         
         entryNome.configure(border_color="gray")
         entryCPF.configure(border_color="gray")
@@ -467,15 +483,23 @@ def vagasDisponiveis(janela):
             entrytext = ctk.CTkLabel(scroll_frame, text=text, font=("Arial", 15))
             entrytext.grid(row=3, column=j, padx=5, pady=5, sticky='n')
             continue
-
+        
+        contaVaga = 0
         for i, vaga in enumerate(vagas_do_dia, start=3):
             horario, ocupado, limite, vagas = vaga
-            
-            text = f"{horario}h: {ocupado}/{limite} ({vagas} vagas)"
-            
+            if vagas == 0:
+                continue
+            else:
+                text = f"{horario}h: {ocupado}/{limite} ({vagas} vagas)"
+                
+                entrytext = ctk.CTkLabel(scroll_frame, text=text, font=("Arial", 15))
+                entrytext.grid(row=i, column=j, padx=5, pady=5, sticky='n')
+                contaVaga += 1
+        
+        if contaVaga == 0:
+            text = "Todos os horários estão ocupados"
             entrytext = ctk.CTkLabel(scroll_frame, text=text, font=("Arial", 15))
-            entrytext.grid(row=i, column=j, padx=5, pady=5, sticky='n')
-
+            entrytext.grid(row=3, column=j, padx=5, pady=5, sticky='n')
     return widgetVagas
 
 def mensalidades_vencidas(janela):
