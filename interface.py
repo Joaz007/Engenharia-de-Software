@@ -267,8 +267,8 @@ def cadastro(janela):
         if dia_semana.get() == 2:
             entryDiasSemana1.grid(row=2, column=3, pady= 30)
             entryHorario1.grid(row=2, column=4, pady= 30)
-            entryDiasSemana2.grid(row=2, column=3, pady= 30)
-            entryHorario2.grid(row=2, column=4, pady= 30)
+            entryDiasSemana2.grid(row=3, column=3, pady= 30)
+            entryHorario2.grid(row=3, column=4, pady= 30)
         elif dia_semana.get() == 3:
             entryDiasSemana1.grid(row=2, column=3, pady= 30)
             entryHorario1.grid(row=2, column=4, pady= 30)
@@ -292,9 +292,15 @@ def cadastro(janela):
     entryDiasSemana1 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), command=lambda dia: defineHorario(entryDiasSemana1, entryHorario1))
     entryDiasSemana2 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), command=lambda dia: defineHorario(entryDiasSemana2, entryHorario2))
     entryDiasSemana3 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), command=lambda dia: defineHorario(entryDiasSemana3, entryHorario3))
+    entryDiasSemana1.set("Selecione um dia")
+    entryDiasSemana2.set("Selecione um dia")
+    entryDiasSemana3.set("Selecione um dia")
     entryHorario1 = ctk.CTkComboBox(frameHorarios, values= ["Selecione um horário"], font=("Arial", 15))
     entryHorario2 = ctk.CTkComboBox(frameHorarios, values= ["Selecione um horário"], font=("Arial", 15))
     entryHorario3 = ctk.CTkComboBox(frameHorarios, values= ["Selecione um horário"], font=("Arial", 15))
+    entryHorario1.set("Selecione um horário")
+    entryHorario2.set("Selecione um horário")
+    entryHorario3.set("Selecione um horário")
     
     def defineHorario(entryDia, entryHorario):
         horarios = []
@@ -312,9 +318,7 @@ def cadastro(janela):
         if entryDia.get() == "Selecione um dia":
             horarios = []
             
-        entryHorario.configure(values= horarios)
-        entryHorario.set("Selecione um horário")
-        
+        entryHorario.configure(values= horarios)       
     
     labelverificacao = ctk.CTkLabel(frameHorarios, text="", font=("Arial", 15))
     labelverificacao.grid(row=4, column=4, columnspan=2, pady=30)
@@ -378,18 +382,7 @@ def cadastro(janela):
         if (dia_semana.get() == 2) and (entryDiasSemana1.get() == "Selecione um dia" or entryHorario1.get() == "Selecione um horário"):
             erros.append("Selecione o 1º dia e horário.")
             
-        if dia_semana.get() == 2:
-            if not db.verificaHorarios(entryDiasSemana1.get().lower(), entryHorario1.get()):
-                erros.append(f"Horário {entryHorario1.get()} indisponível para {entryDiasSemana1.get().lower()}")
-            if not db.verificaHorarios(entryDiasSemana2.get().lower(), entryHorario2.get()):
-                erros.append(f"Horário {entryHorario2.get()} indisponível para {entryDiasSemana2.get().lower()}")
-        elif dia_semana.get() == 3:
-            if not db.verificaHorarios(entryDiasSemana1.get().lower(), entryHorario1.get()):
-                erros.append(f"Horário {entryHorario1.get()} indisponível para {entryDiasSemana1.get().lower()}")
-            if not db.verificaHorarios(entryDiasSemana2.get().lower(), entryHorario2.get()):
-                erros.append(f"Horário {entryHorario2.get()} indisponível para {entryDiasSemana2.get().lower()}")
-            if not db.verificaHorarios(entryDiasSemana3.get().lower(), entryHorario3.get()):
-                erros.append(f"Horário {entryHorario3.get()} indisponível para {entryDiasSemana3.get().lower()}")
+        
         
         if erros:
             labelverificacao.configure(text="\n".join(erros), text_color="red")
@@ -420,7 +413,7 @@ def cadastro(janela):
         if nova_aluna:
             text = db.Academia().addAlunas(nova_aluna)
             label = ctk.CTkLabel(frameHorarios, text="", font=("Arial", 15))
-            label.grid(row=5, column=4, columnspan=2, pady=30)
+            label.grid(row=5, column=0, columnspan=9, pady=30)
             label.configure(text=text, text_color="green")
             label.after(3000, lambda: (label.destroy(), voltar(), limpaInfo()))
         else:

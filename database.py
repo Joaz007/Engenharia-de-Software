@@ -257,6 +257,15 @@ class Academia:
         else:
             return rows
 
+    def verificaVagas(self, dia: str, horario: str) -> bool:
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute('''SELECT COUNT(*) FROM horarios WHERE dia = ? AND horario = ?''', (dia, horario))
+            ocupado = cur.fetchone()[0]
+            limite = self.limiteHorario(horario)
+            
+            return ocupado, limite
+        
     def mostraVagas(self, dia: str) -> List[Tuple[int, int, int, int, int]]:
         lista_de_vagas: List[Tuple[int, int, int, int, int]] = []
     
@@ -269,12 +278,7 @@ class Academia:
                 return []
             else:
                 for h in sorted(horarios):
-                    cur.execute('SELECT COUNT(*) FROM horarios WHERE dia = ? AND horario = ?', (dia, h))
-                    ocupado = cur.fetchone()[0]
-                    limite = self.limiteHorario(h)
-                    
-                    if limite == 0:
-                        continue 
+                    ocupado, limite = self.verificaVagas(dia, h)
                     vagas = max(limite - ocupado, 0)
                     vaga_atual = (h, ocupado, limite, vagas)
                     lista_de_vagas.append(vaga_atual)
@@ -299,30 +303,6 @@ def validar_cpf(cpf: str):
     if dv2 != nums[10]:
         return False
     return True
-
-def verificaHorarios(dia: str, horario: str) -> bool:
-    hora, minuto = map(int, horario.split(":"))
-    
-    if dia == "segunda" or dia == "quarta":
-        if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
-            return True
-        elif (hora == 11 and minuto == 0) or (hora == 11 and minuto == 30):
-            return True
-        elif (hora >= 14 and minuto == 30) and (hora <= 19 and minuto == 30):
-            return True
-    elif dia == "terca" or dia == "terça" or dia == "quinta":
-        if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
-            return True
-        elif (hora >= 15 and minuto >= 30) and (hora <= 19 and minuto == 30):
-            return True
-    elif dia == "sexta":
-        if (hora >= 6 and minuto == 0) and (hora <= 9 and minuto == 0):
-            return True
-        elif (hora == 11 and minuto == 0) or (hora == 11 and minuto == 30):
-            return True
-        elif (hora >= 14 and minuto == 30) and (hora <= 18 and minuto == 30):
-            return True
-    return False
                        
 def InserirInfosAlunas(nome, apelido, nascimento, cep, endereco, bairro, celular, cpf, quantdias, dias, horario, valor, vencimento, termo):
     # Usa o AlunaBuilder para criar a instância 
