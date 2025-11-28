@@ -302,6 +302,73 @@ class Academia:
             conn.commit()
 
         return f"Aluna {nome} removida com sucesso."
+    
+    def editarAluna(self, cpf: str, **novos_dados):
+        cpf_limpo = ''.join(filter(str.isdigit, cpf))
+
+        with self._connect() as conn: 
+            cur = conn.cursor()
+
+            cur.execute("SELECT * FROM alunas WHERE cpf = ?", (cpf_limpo,))
+            row = cur.fetchone()
+
+            if not row:
+                return "Aluna não encontrada."
+            
+            #atualizando a tabela de alunas 
+            campos_validos = {"nome", "apelido", "nascimento", "cep", "endereco", "bairro",
+                              "celular", "dias", "valor", "vencimento", "termo"}
+            
+            updates = []
+            valores = []
+
+            for campo, valor in novos_dados.items():
+                if campo in campos_validos:
+                    updates.append(f"{campo} = ?")
+                    valores.append(valor)
+
+            if updates:
+                sql = f"UPDATE alunas SET {', '.join(updates)} WHERE cpf = ?"
+                valores.append(cpf_limpo)
+                cur.execute(sql, valores)
+                conn.commit()
+            
+            #atualizando os dias e horarios 
+            diasSemana = novos_dados.get("diasSemana")
+            horarios = novos_dados.get("horario")
+
+            if diasSemana and horarios: 
+                diasSemana = [d.strip().lower() for d in diasSemana]
+                horarios = [h.strip() for h in horarios]
+
+                if len(diasSemana) != len(horarios):
+                    return "Quantidade de dias e horarios nao coincide."
+                
+                cur.execute("SELECT dia, horario FROM horarios WHERE aluna_cpf = ?", (cpf_limpo,))
+                horarios_antigos = cur.fetchall()
+
+                #apagando os horarios atuais
+                cur.execute("DELETE FROM horarios WHERE aluna_cpf = ?", (cpf_limpo,))
+                conn.commit()
+
+                for d, h in zip(diasSemana, horarios):
+                    cur.execute("SELECT COUNT(*) FROM horarios WHERE dia = ? AND horario = ?", (d, h))
+                    ocupados = cur.fetchone()[0]
+
+                    limite = self.limiteHorario(h)
+
+                    if ocupados >= limite:
+                        #volta os horarios antigos se der ruim
+                        for da, ho in horarios_antigos:
+                            cur.execute("INSERT INTO horarios (dia, horario, aluna_cpf) VALUES (?, ?, ?)", (da, ho, cpf_limpo))
+                            conn.commit()
+                            return f"O horário {h} de {d} ja esta cheio ({limite} alunas)."
+
+                for d, h in zip(diasSemana, horarios):
+                    cur.execute("INSERT INTO horarios (dia, horario, aluna_cpf) VALUES (?, ?, ?)", (d, h, cpf_limpo))
+                    conn.commit()        
+        
+        return "Dados da aluna atualizados com sucesso."
 
 def validar_cpf(cpf: str):
     cpf_digits = ''.join(ch for ch in cpf if ch.isdigit())
