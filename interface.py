@@ -182,10 +182,6 @@ def cadastro(janela):
     entryCPF = ctk.CTkEntry(widgetCadastro, font=("Arial", 15))
     entryCPF.grid(row=3, column=1, pady=10, padx= 10, sticky=W)
     entryCPF.bind("<KeyRelease>", formatar_cpf)
-
-    def defineDia(entrada):
-        entryMensalidade.delete(0, ctk.END)
-        entryMensalidade.insert(0, valor(entrada))
             
     dia_semana = IntVar()
     labelQuantDias = ctk.CTkLabel(widgetCadastro, text="Quantidade de Dias:", font=("Arial", 15))
@@ -225,6 +221,59 @@ def cadastro(janela):
     
     checkTermo = ctk.CTkCheckBox(widgetTermo, text="Concordo", font=("Arial", 15))
     checkTermo.pack(pady=10, anchor=W)
+        
+    labelContinuar = ctk.CTkButton(widgetCadastro, text="Continuar", font=("Arial", 15), command= lambda: continuar())
+    labelContinuar.grid(row = 9, column = 8, pady=10, padx= 10, sticky=E)
+    
+    #novo frame para os horários
+    frameHorarios = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+
+    labelHorario = ctk.CTkLabel(frameHorarios, text="Horários Disponíveis", font=("Segoe UI Black", 28))
+    labelHorario.grid(row=0, column=0, columnspan=9, pady= 30)
+
+    labelDias = ctk.CTkLabel(frameHorarios, text="Selecione os dias da semana e o horário:", font=("Arial", 15))
+    labelDias.grid(row=1, column=0, columnspan=9, pady= 30)
+
+    entryDiasSemana1 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), command=lambda dia: defineHorario(entryDiasSemana1, entryHorario1))
+    entryDiasSemana2 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), command=lambda dia: defineHorario(entryDiasSemana2, entryHorario2))
+    entryDiasSemana3 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), command=lambda dia: defineHorario(entryDiasSemana3, entryHorario3))
+    entryDiasSemana1.set("Selecione um dia")
+    entryDiasSemana2.set("Selecione um dia")
+    entryDiasSemana3.set("Selecione um dia")
+    entryHorario1 = ctk.CTkComboBox(frameHorarios, values= ["Selecione um horário"], font=("Arial", 15))
+    entryHorario2 = ctk.CTkComboBox(frameHorarios, values= ["Selecione um horário"], font=("Arial", 15))
+    entryHorario3 = ctk.CTkComboBox(frameHorarios, values= ["Selecione um horário"], font=("Arial", 15))
+    entryHorario1.set("Selecione um horário")
+    entryHorario2.set("Selecione um horário")
+    entryHorario3.set("Selecione um horário")      
+    
+    labelverificacao = ctk.CTkLabel(frameHorarios, text="", font=("Arial", 15))
+    labelverificacao.grid(row=4, column=4, columnspan=2, pady=30)
+    
+    # frame para os botões Voltar/Enviar
+    frame_botoes = ctk.CTkFrame(janela, fg_color="transparent", height=100, width=1450)
+    botao_voltar = ctk.CTkButton(frame_botoes, text="Voltar", font=("Arial", 15), command=lambda: voltar())
+    botao_voltar.pack(side="left", padx=20, pady=15)
+    botao_enviar = ctk.CTkButton(frame_botoes, text="Enviar", font=("Arial", 15), command=lambda: enviar_dados())
+    botao_enviar.pack(side="right", padx=20, pady=15)
+    
+    def buscar_cep():
+        cep = re.sub(r'\D', '', entryCEP.get())
+        resultado = verificar_cep(cep)
+
+        if isinstance(resultado, dict):
+            entryEndereco.insert(0, resultado.get('logradouro', ''))
+            entryBairro.insert(0, resultado.get('bairro', ''))
+        elif isinstance(resultado, tuple): # Erro
+            erro_msg = resultado[1]
+            labelResp = ctk.CTkLabel(widgetCadastro, text="", font=("Arial", 15))
+            labelResp.grid(row=2, column=2, pady=10, sticky=W)
+            labelResp.configure(text=erro_msg)
+            labelResp.after(3000, lambda: labelResp.destroy())
+    
+    def defineDia(entrada):
+        entryMensalidade.delete(0, ctk.END)
+        entryMensalidade.insert(0, valor(entrada))
     
     def continuar():
         # Validação simples
@@ -276,31 +325,6 @@ def cadastro(janela):
             entryHorario2.grid(row=3, column=4, pady= 30)
             entryDiasSemana3.grid(row=4, column=3, pady= 30)
             entryHorario3.grid(row=4, column=4, pady= 30)
-        
-    labelContinuar = ctk.CTkButton(widgetCadastro, text="Continuar", font=("Arial", 15), command= lambda: continuar())
-    labelContinuar.grid(row = 9, column = 8, pady=10, padx= 10, sticky=E)
-    
-    #novo frame para os horários
-    frameHorarios = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
-
-    labelHorario = ctk.CTkLabel(frameHorarios, text="Horários Disponíveis", font=("Segoe UI Black", 28))
-    labelHorario.grid(row=0, column=0, columnspan=9, pady= 30)
-
-    labelDias = ctk.CTkLabel(frameHorarios, text="Selecione os dias da semana e o horário:", font=("Arial", 15))
-    labelDias.grid(row=1, column=0, columnspan=9, pady= 30)
-
-    entryDiasSemana1 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), command=lambda dia: defineHorario(entryDiasSemana1, entryHorario1))
-    entryDiasSemana2 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), command=lambda dia: defineHorario(entryDiasSemana2, entryHorario2))
-    entryDiasSemana3 = ctk.CTkComboBox(frameHorarios, values=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"], font=("Arial", 15), command=lambda dia: defineHorario(entryDiasSemana3, entryHorario3))
-    entryDiasSemana1.set("Selecione um dia")
-    entryDiasSemana2.set("Selecione um dia")
-    entryDiasSemana3.set("Selecione um dia")
-    entryHorario1 = ctk.CTkComboBox(frameHorarios, values= ["Selecione um horário"], font=("Arial", 15))
-    entryHorario2 = ctk.CTkComboBox(frameHorarios, values= ["Selecione um horário"], font=("Arial", 15))
-    entryHorario3 = ctk.CTkComboBox(frameHorarios, values= ["Selecione um horário"], font=("Arial", 15))
-    entryHorario1.set("Selecione um horário")
-    entryHorario2.set("Selecione um horário")
-    entryHorario3.set("Selecione um horário")
     
     def defineHorario(entryDia, entryHorario):
         horarios = []
@@ -318,32 +342,17 @@ def cadastro(janela):
         if entryDia.get() == "Selecione um dia":
             horarios = []
             
-        entryHorario.configure(values= horarios)       
+        entryHorario.configure(values= horarios)            
     
-    labelverificacao = ctk.CTkLabel(frameHorarios, text="", font=("Arial", 15))
-    labelverificacao.grid(row=4, column=4, columnspan=2, pady=30)
-    
-    # frame para os botões Voltar/Enviar
-    frame_botoes = ctk.CTkFrame(janela, fg_color="transparent", height=100, width=1450)
-    botao_voltar = ctk.CTkButton(frame_botoes, text="Voltar", font=("Arial", 15), command=lambda: voltar())
-    botao_voltar.pack(side="left", padx=20, pady=15)
-    botao_enviar = ctk.CTkButton(frame_botoes, text="Enviar", font=("Arial", 15), command=lambda: enviar_dados())
-    botao_enviar.pack(side="right", padx=20, pady=15)
-    
-    def buscar_cep():
-        cep = re.sub(r'\D', '', entryCEP.get())
-        resultado = verificar_cep(cep)
+    def voltar():
+        # Esconde a tela de horários
+        frameHorarios.place_forget()
+        frame_botoes.place_forget()
 
-        if isinstance(resultado, dict):
-            entryEndereco.insert(0, resultado.get('logradouro', ''))
-            entryBairro.insert(0, resultado.get('bairro', ''))
-        elif isinstance(resultado, tuple): # Erro
-            erro_msg = resultado[1]
-            labelResp = ctk.CTkLabel(widgetCadastro, text="", font=("Arial", 15))
-            labelResp.grid(row=2, column=2, pady=10, sticky=W)
-            labelResp.configure(text=erro_msg)
-            labelResp.after(3000, lambda: labelResp.destroy())
-                
+        # Re-exibe a tela de cadastro
+        widgetCadastro.place(relx=0.5, anchor=N)
+        widgetTermo.place(relx=0.5, rely=0.32, anchor=N)
+        
     def limpaInfo():
         #reseta valores padrão
         entryNome.delete(0, ctk.END)
@@ -376,18 +385,7 @@ def cadastro(janela):
         
     def enviar_dados():
         labelverificacao.configure(text="")  # Limpa a mensagem de verificação
-        
-        erros = []
-        
-        if (dia_semana.get() == 2) and (entryDiasSemana1.get() == "Selecione um dia" or entryHorario1.get() == "Selecione um horário"):
-            erros.append("Selecione o 1º dia e horário.")
-            
-        
-        
-        if erros:
-            labelverificacao.configure(text="\n".join(erros), text_color="red")
-            return
-        
+                
         # Coleta os dados dos campos
         nome = entryNome.get().strip()
         apelido = entryApelido.get().strip()
@@ -418,15 +416,6 @@ def cadastro(janela):
             label.after(3000, lambda: (label.destroy(), voltar(), limpaInfo()))
         else:
             print("Erro ao enviar os dados.")
-
-    def voltar():
-        # Esconde a tela de horários
-        frameHorarios.place_forget()
-        frame_botoes.place_forget()
-
-        # Re-exibe a tela de cadastro
-        widgetCadastro.place(relx=0.5, anchor=N)
-        widgetTermo.place(relx=0.5, rely=0.32, anchor=N)
     
     return frameCadastro
         

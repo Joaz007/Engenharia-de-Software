@@ -256,16 +256,7 @@ class Academia:
             return("Nenhuma aluna cadastrada.")
         else:
             return rows
-
-    def verificaVagas(self, dia: str, horario: str) -> bool:
-        with self._connect() as conn:
-            cur = conn.cursor()
-            cur.execute('''SELECT COUNT(*) FROM horarios WHERE dia = ? AND horario = ?''', (dia, horario))
-            ocupado = cur.fetchone()[0]
-            limite = self.limiteHorario(horario)
-            
-            return ocupado, limite
-        
+    
     def mostraVagas(self, dia: str) -> List[Tuple[int, int, int, int, int]]:
         lista_de_vagas: List[Tuple[int, int, int, int, int]] = []
     
@@ -278,7 +269,12 @@ class Academia:
                 return []
             else:
                 for h in sorted(horarios):
-                    ocupado, limite = self.verificaVagas(dia, h)
+                    cur.execute('SELECT COUNT(*) FROM horarios WHERE dia = ? AND horario = ?', (dia, h))
+                    ocupado = cur.fetchone()[0]
+                    limite = self.limiteHorario(h)
+                    
+                    if limite == 0:
+                        continue 
                     vagas = max(limite - ocupado, 0)
                     vaga_atual = (h, ocupado, limite, vagas)
                     lista_de_vagas.append(vaga_atual)
@@ -333,7 +329,7 @@ def InserirInfosAlunas(nome, apelido, nascimento, cep, endereco, bairro, celular
 def main():
     academia = Academia()
     novaAluna = AlunaBuilder()
-    ctk.entrada()
+    #tirei a função de exibir a interface pra vc codar no terminal tá
 
 if __name__ == "__main__":
     main()
