@@ -280,6 +280,28 @@ class Academia:
                     lista_de_vagas.append(vaga_atual)
                     
                 return lista_de_vagas
+            
+    def excluirAluna(self, cpf: str):
+        cpf_limpo = ''.join(filter(str.isdigit, cpf))
+
+        if len(cpf_limpo) != 11:
+            return "CPF inválido."
+        
+        with self._connect as conn:
+            cur = conn.cursor()
+            #verificando se a aluna existe
+            cur.execute("SELECT nome FROM alunas WHERE cpf = ?", (cpf_limpo,))
+            row = cur.fetchone()
+
+            if not row:
+                return "Aluna não encontrada."
+            
+            nome = row[0]
+            #excluindooo
+            cur.execute("DELETE FROM alunas WHERE cpf = ?", (cpf_limpo,))
+            conn.commit()
+
+        return f"Aluna {nome} removida com sucesso."
 
 def validar_cpf(cpf: str):
     cpf_digits = ''.join(ch for ch in cpf if ch.isdigit())
