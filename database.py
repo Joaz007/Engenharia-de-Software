@@ -369,7 +369,55 @@ class Academia:
                     conn.commit()        
         
         return "Dados da aluna atualizados com sucesso."
+    
+    def buscarPorNome(self, nome_parcial: str):
+        nome_parcial = f"%{nome_parcial.lower()}%"
 
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute(""" SELECT nome, apelido, cpf FROM alunas WHERE LOWER(nome) LIKE ? ORDER BY nome """, (nome_parcial,))
+
+            alunas = cur.fetchall()
+
+            if not alunas:
+                return "Nenhuma aluna encontrada com esse nome."
+            
+            resultado = []
+
+            for nome, apelido, cpf in alunas:
+                cur.execute(""" SELECT dia, horario FROM horarios WHERE aluna_cpf = ? ORDER BY dia, horario """, (cpf,))
+                horarios = cur.fetchall()
+
+                resultado.append({"nome": nome, "apelido": apelido, "cpf": cpf, "horarios": horarios})
+
+        return resultado
+    
+    def aniversariantesMes(self, mes: int):
+        if not (1 <= mes <= 12):
+            return "Mes invalido. Use um numero entre 1 e 12."
+        
+        mes_str = f"{mes:02d}" #eh pra 01, 02 etc ser valido tb
+
+        with self._connect() as conn:
+            cur = conn.cursor()
+
+            cur.execute(""" SELECT nome, nascimento, cpf FROM alunas WHERE substr(nascimento, 4, 2) = ? ORDER BY nascimento """, (mes_str,))
+
+            rows = cur.fetchall()
+
+            if not rows:
+                return "Nenhuma aniversariante neste mes."
+            
+            resultado = []
+
+            for nome, nascimento, cpf in rows:
+                cur.execute(""" SELECT dia, horario FROM horarios WHERE aluna_cpf = ? ORDER BY dia, horario """, (cpf,))
+                horarios = cur.fetchall()
+
+                resultado.append({"nome": nome, "nascimento": nascimento, "cpf": cpf, "horarios": horarios})
+
+        return resultado
+    
 def validar_cpf(cpf: str):
     cpf_digits = ''.join(ch for ch in cpf if ch.isdigit())
     if len(cpf_digits) != 11:
