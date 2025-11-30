@@ -540,6 +540,7 @@ def pesquisa_alunas(janela):
     widgetPesquisa = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
     widgetPesquisa.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
     widgetPesquisa.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+    
     label = ctk.CTkLabel(widgetPesquisa, text="Pesquisar Alunas", font=("Segoe UI Black", 30))
     label.grid(row=0, column=0, columnspan=5, pady=20)
     
@@ -547,45 +548,104 @@ def pesquisa_alunas(janela):
     label_pesquisar.grid(row=1, column=1, pady=10, padx=5, sticky=E)
     entry_pesquisar = ctk.CTkEntry(widgetPesquisa, font=("Arial", 15), width=300)
     entry_pesquisar.grid(row=1, column=2, pady=10, padx=5, sticky=W)
-    
     botao_pesquisar = ctk.CTkButton(widgetPesquisa, text="Pesquisar", font=("Arial", 15), command=lambda: pesquisar())
-    botao_pesquisar.grid(row=1, column=3, pady=10, padx=5, sticky=W)
+    botao_pesquisar.grid(row=1, column=3, pady=10, sticky=W)
     
     def pesquisar():
-        for widget in widgetPesquisa.winfo_children():
+        scroll = ctk.CTkScrollableFrame(widgetPesquisa, fg_color="transparent")
+        scroll.place(relx=0.5, rely=0.6, anchor=CENTER, relwidth=0.9, relheight=0.7)
+        scroll.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+        for widget in scroll.winfo_children():
             if int(widget.grid_info().get("row")) >= 2:
                 widget.destroy()
+                
         alunas = academia.buscarPorNome_ou_Cpf(entry_pesquisar.get().strip())
         
-        if alunas is None:
-            labelaluna = ctk.CTkLabel(widgetPesquisa, text="Nenhuma aluna encontrada com essa informação", font=("Arial", 18))
+        if not alunas:
+            labelaluna = ctk.CTkLabel(scroll, text="Nenhuma aluna encontrada com essa informação", font=("Arial", 18))
             labelaluna.grid(row=2, column=0, columnspan=5, pady=10, padx=5)
         else:
-            labelnome = ctk.CTkLabel(widgetPesquisa, text="Nome", font=("Arial", 15))
-            labelnome.grid(row=2, column=0, pady=10, padx=5, sticky=W)
-            labelcpf = ctk.CTkLabel(widgetPesquisa, text="CPF", font=("Arial", 15))
-            labelcpf.grid(row=2, column=1, pady=10, padx=5, sticky=W)
-            labelnascimento = ctk.CTkLabel(widgetPesquisa, text="Data de Nascimento", font=("Arial", 15))
-            labelnascimento.grid(row=2, column=2, pady=10, padx=5, sticky=W)
-            labelvalor = ctk.CTkLabel(widgetPesquisa, text="Valor", font=("Arial", 15))
-            labelvalor.grid(row=2, column=3, pady=10, padx=5, sticky=W)
-            labelvencimento = ctk.CTkLabel(widgetPesquisa, text="Vencimento", font=("Arial", 15))
-            labelvencimento.grid(row=2, column=4, pady=10, padx=5, sticky=W)
+            labelnome = ctk.CTkLabel(scroll, text="Nome", font=("Arial", 15))
+            labelnome.grid(row=2, column=0, pady=5, padx=5)
+            labelcpf = ctk.CTkLabel(scroll, text="CPF", font=("Arial", 15))
+            labelcpf.grid(row=2, column=1, pady=5, padx=5)
+            labelnascimento = ctk.CTkLabel(scroll, text="Data de Nascimento", font=("Arial", 15))
+            labelnascimento.grid(row=2, column=2, pady=5, padx=5)
+            labelvalor = ctk.CTkLabel(scroll, text="Valor", font=("Arial", 15))
+            labelvalor.grid(row=2, column=3, pady=5, padx=5)
+            labelvencimento = ctk.CTkLabel(scroll, text="Vencimento", font=("Arial", 15))
+            labelvencimento.grid(row=2, column=4, pady=5, padx=5)
             
             for i, aluna in enumerate(alunas, start=3):
                 nome, cpf, nascimento, valor, vencimento = aluna
                 
-                entrynome = ctk.CTkLabel(widgetPesquisa, text=nome, font=("Arial", 15))
-                entrynome.grid(row=i, column=0, pady=10, padx=5, sticky=W)
-                entrycpf = ctk.CTkLabel(widgetPesquisa, text=cpf, font=("Arial", 15))
-                entrycpf.grid(row=i, column=1, pady=10, padx=5, sticky=W)
-                entrynascimento = ctk.CTkLabel(widgetPesquisa, text=nascimento, font=("Arial", 15))
-                entrynascimento.grid(row=i, column=2, pady=10, padx=5, sticky=W)
-                entryvalor = ctk.CTkLabel(widgetPesquisa, text=f"R${valor:.2f}", font=("Arial", 15))
-                entryvalor.grid(row=i, column=3, pady=10, padx=5, sticky=W)
-                entryvencimento = ctk.CTkLabel(widgetPesquisa, text=str(vencimento), font=("Arial", 15))
-                entryvencimento.grid(row=i, column=4, pady=10, padx=5, sticky=W)
+                entrynome = ctk.CTkLabel(scroll, text=nome, font=("Arial", 15))
+                entrynome.grid(row=i, column=0, pady=5, padx=5)
+                entrycpf = ctk.CTkLabel(scroll, text=cpf, font=("Arial", 15))
+                entrycpf.grid(row=i, column=1, pady=5, padx=5)
+                entrynascimento = ctk.CTkLabel(scroll, text=nascimento, font=("Arial", 15))
+                entrynascimento.grid(row=i, column=2, pady=5, padx=5)
+                entryvalor = ctk.CTkLabel(scroll, text=f"R${valor:.2f}", font=("Arial", 15))
+                entryvalor.grid(row=i, column=3, pady=5, padx=5)
+                entryvencimento = ctk.CTkLabel(scroll, text=str(vencimento), font=("Arial", 15))
+                entryvencimento.grid(row=i, column=4, pady=5, padx=5)
     return widgetPesquisa
+
+def aniversarios_do_mes(janela):
+    academia = db.Academia()
+    widgetAniversarios = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+    widgetAniversarios.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
+    widgetAniversarios.grid_columnconfigure((0, 1), weight=1)
+    
+    label = ctk.CTkLabel(widgetAniversarios, text="Aniversariantes do Mês", font=("Segoe UI Black", 30))
+    label.grid(row=0, column=0, columnspan=2, pady=20)
+    
+    labelniver = ctk.CTkLabel(widgetAniversarios, text="Qual mês deseja verificar:", font=("Arial", 15))
+    labelniver.grid(row=1, column=0, pady=10, padx=5, sticky=E)
+    entryniver = ctk.CTkComboBox(widgetAniversarios, values=["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"], font=("Arial", 15), width=200)
+    entryniver.grid(row=1, column=1, pady=10, padx=5, sticky=W)
+    entryniver.set("Selecione um mês")
+    botao_niver = ctk.CTkButton(widgetAniversarios, text="Verificar", font=("Arial", 15), command=lambda: verificar_aniversariantes())
+    botao_niver.grid(row=2, column=0, columnspan=2, pady=10)
+    
+    meses = {"Janeiro": 1, "Fevereiro": 2, "Março": 3, "Abril": 4, "Maio": 5, "Junho": 6, "Julho": 7, "Agosto": 8, "Setembro": 9, "Outubro": 10, "Novembro": 11, "Dezembro": 12}
+    
+    def verificar_aniversariantes():
+        scroller = ctk.CTkScrollableFrame(widgetAniversarios, fg_color="transparent")
+        scroller.place(relx=0.5, rely=0.68, anchor=CENTER, relwidth=0.9, relheight=0.7)
+        scroller.grid_columnconfigure((0, 1), weight=1)
+        
+        for widget in scroller.winfo_children():
+            if int(widget.grid_info().get("row")) >= 3:
+                widget.destroy()
+        mes = entryniver.get()
+        mes_num = meses.get(mes)
+        
+        if mes == "Selecione um mês":
+            labelmsg = ctk.CTkLabel(scroller, text="Por favor, selecione um mês válido.", font=("Arial", 15))
+            labelmsg.grid(row=3, column=0, columnspan=2, pady=10)
+            return
+        
+        aniversariantes = academia.aniversariantesMes(mes_num)
+        
+        if not aniversariantes:
+            labelmsg = ctk.CTkLabel(scroller, text=f"Nenhuma aluna faz aniversário em {mes}.", font=("Arial", 15))
+            labelmsg.grid(row=3, column=0, columnspan=2, pady=10)
+        else:
+            labelnome = ctk.CTkLabel(scroller, text="Nome", font=("Arial", 15))
+            labelnome.grid(row=3, column=0, pady=5, padx=5)
+            labeldata = ctk.CTkLabel(scroller, text="Data de Nascimento", font=("Arial", 15))
+            labeldata.grid(row=3, column=1, pady=5, padx=5)
+            
+            for i, aniversariante in enumerate(aniversariantes, start=4):
+                nome, data_nascimento = aniversariante
+                
+                entrynome = ctk.CTkLabel(scroller, text=nome, font=("Arial", 15))
+                entrynome.grid(row=i, column=0, pady=5, padx=5)
+                entrydata = ctk.CTkLabel(scroller, text=data_nascimento, font=("Arial", 15))
+                entrydata.grid(row=i, column=1, pady=5, padx=5)
+    
+    return widgetAniversarios
 
 def entrada():
     janela = ctk.CTk()
@@ -640,6 +700,7 @@ def entrada():
     # widget3 (Container do Menu)
     botao_altura = int(screen_height * 0.02)
     widget3 = ctk.CTkFrame(janela, fg_color="transparent")
+    widget3.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
             
     #funções de navegação entre páginas
     def go_home():        
@@ -680,7 +741,7 @@ def entrada():
             label_da_imagem.configure(image=labelImagemPequena)
             
         #Mostra o botão "Início" (na coluna 5 do grid do widget2)
-        botao_inicio.grid(row=1, column=5, padx=5, pady=5)
+        botao_inicio.grid(row=1, column=6, padx=5, pady=5)
         
         #Cria e armazena a nova página
         app_state["active_page_frame"] = page_function(janela)
@@ -710,6 +771,11 @@ def entrada():
     botao_pesquisa.grid(row=1, column=4, padx=5, pady=5)
     labelPesquisa = ctk.CTkLabel(widget3, text= "Pesquisar Alunas", font= ("Segoe UI Black", 18))
     labelPesquisa.grid(row=2, column=4, padx=5, pady=5)
+    
+    botao_aniversarios = ctk.CTkButton(widget3, image= imageNiver_ctk, hover_color= "#292B25", width=imageNiver_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(aniversarios_do_mes))
+    botao_aniversarios.grid(row=1, column=5, padx=5, pady=5)
+    labelAniversarios = ctk.CTkLabel(widget3, text= "Aniversariantes", font= ("Segoe UI Black", 18))
+    labelAniversarios.grid(row=2, column=5, padx=5, pady=5)
     
     botao_inicio = ctk.CTkButton(widget3, image= imageHome_ctk, hover_color= "#292B25", width=imageHome_ctk.__sizeof__(), height=botao_altura , text="", fg_color="transparent", command=go_home)
 
