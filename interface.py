@@ -480,7 +480,7 @@ def mensalidades_vencidas(janela):
     label = ctk.CTkLabel(widgetMensalidades, text="Página de Mensalidades", font=("Segoe UI Black", 30))
     label.pack(pady=100)
     return widgetMensalidades
-    
+"""
 def lista_alunas(janela):
     academia = db.Academia()
     widgetLista = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
@@ -510,7 +510,12 @@ def lista_alunas(janela):
     label_cabecalhoVencimento = ctk.CTkLabel(scroll_frame, text="Vencimento", font=("Arial", 15, "bold"))
     label_cabecalhoVencimento.grid(row=0, column=6, padx=5, pady=10)
 
-    for i, aluna in enumerate(academia.listaAlunas(), start=1):
+    alunas = academia.listaAlunas()
+    if alunas == []:
+        labelNenhuma = ctk.CTkLabel(scroll_frame, text="Nenhuma aluna cadastrada.", font=("Arial", 15))
+        labelNenhuma.grid(row=1, column=0, columnspan=7, padx=5, pady=5)
+        return widgetLista
+    for i, aluna in enumerate(alunas, start=1):
         nome, apelido, cpf, dias, horario, valor, vencimento = aluna
         
         entryNome = ctk.CTkLabel(scroll_frame, text=nome, font=("Arial", 15))
@@ -529,7 +534,59 @@ def lista_alunas(janela):
         entryVencimento.grid(row=i, column=6, padx=5, pady=5)
 
     return widgetLista
+"""
+def pesquisa_alunas(janela):
+    academia = db.Academia()
+    widgetPesquisa = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+    widgetPesquisa.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
+    widgetPesquisa.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+    label = ctk.CTkLabel(widgetPesquisa, text="Pesquisar Alunas", font=("Segoe UI Black", 30))
+    label.grid(row=0, column=0, columnspan=5, pady=20)
     
+    label_pesquisar = ctk.CTkLabel(widgetPesquisa, text="Digite o nome ou CPF da aluna: ", font=("Arial", 15))
+    label_pesquisar.grid(row=1, column=1, pady=10, padx=5, sticky=E)
+    entry_pesquisar = ctk.CTkEntry(widgetPesquisa, font=("Arial", 15), width=300)
+    entry_pesquisar.grid(row=1, column=2, pady=10, padx=5, sticky=W)
+    
+    botao_pesquisar = ctk.CTkButton(widgetPesquisa, text="Pesquisar", font=("Arial", 15), command=lambda: pesquisar())
+    botao_pesquisar.grid(row=1, column=3, pady=10, padx=5, sticky=W)
+    
+    def pesquisar():
+        for widget in widgetPesquisa.winfo_children():
+            if int(widget.grid_info().get("row")) >= 2:
+                widget.destroy()
+        alunas = academia.buscarPorNome_ou_Cpf(entry_pesquisar.get().strip())
+        
+        if alunas is None:
+            labelaluna = ctk.CTkLabel(widgetPesquisa, text="Nenhuma aluna encontrada com essa informação", font=("Arial", 18))
+            labelaluna.grid(row=2, column=0, columnspan=5, pady=10, padx=5)
+        else:
+            labelnome = ctk.CTkLabel(widgetPesquisa, text="Nome", font=("Arial", 15))
+            labelnome.grid(row=2, column=0, pady=10, padx=5, sticky=W)
+            labelcpf = ctk.CTkLabel(widgetPesquisa, text="CPF", font=("Arial", 15))
+            labelcpf.grid(row=2, column=1, pady=10, padx=5, sticky=W)
+            labelnascimento = ctk.CTkLabel(widgetPesquisa, text="Data de Nascimento", font=("Arial", 15))
+            labelnascimento.grid(row=2, column=2, pady=10, padx=5, sticky=W)
+            labelvalor = ctk.CTkLabel(widgetPesquisa, text="Valor", font=("Arial", 15))
+            labelvalor.grid(row=2, column=3, pady=10, padx=5, sticky=W)
+            labelvencimento = ctk.CTkLabel(widgetPesquisa, text="Vencimento", font=("Arial", 15))
+            labelvencimento.grid(row=2, column=4, pady=10, padx=5, sticky=W)
+            
+            for i, aluna in enumerate(alunas, start=3):
+                nome, cpf, nascimento, valor, vencimento = aluna
+                
+                entrynome = ctk.CTkLabel(widgetPesquisa, text=nome, font=("Arial", 15))
+                entrynome.grid(row=i, column=0, pady=10, padx=5, sticky=W)
+                entrycpf = ctk.CTkLabel(widgetPesquisa, text=cpf, font=("Arial", 15))
+                entrycpf.grid(row=i, column=1, pady=10, padx=5, sticky=W)
+                entrynascimento = ctk.CTkLabel(widgetPesquisa, text=nascimento, font=("Arial", 15))
+                entrynascimento.grid(row=i, column=2, pady=10, padx=5, sticky=W)
+                entryvalor = ctk.CTkLabel(widgetPesquisa, text=f"R${valor:.2f}", font=("Arial", 15))
+                entryvalor.grid(row=i, column=3, pady=10, padx=5, sticky=W)
+                entryvencimento = ctk.CTkLabel(widgetPesquisa, text=str(vencimento), font=("Arial", 15))
+                entryvencimento.grid(row=i, column=4, pady=10, padx=5, sticky=W)
+    return widgetPesquisa
+
 def entrada():
     janela = ctk.CTk()
     screen_width = janela.winfo_screenwidth()
@@ -622,8 +679,8 @@ def entrada():
         if labelImagemPequena:
             label_da_imagem.configure(image=labelImagemPequena)
             
-        #Mostra o botão "Início" (na coluna 4 do grid do widget2)
-        botao_inicio.grid(row=1, column=4, padx=5, pady=5)
+        #Mostra o botão "Início" (na coluna 5 do grid do widget2)
+        botao_inicio.grid(row=1, column=5, padx=5, pady=5)
         
         #Cria e armazena a nova página
         app_state["active_page_frame"] = page_function(janela)
@@ -643,11 +700,16 @@ def entrada():
     botao_mensalidades.grid(row=1, column=2, padx=5, pady=5)
     labelMensalidades = ctk.CTkLabel(widget3, text= "Mensalidades", font= ("Segoe UI Black", 18))
     labelMensalidades.grid(row=2, column=2, padx=5, pady=5)
-
+    '''
     botao_lista = ctk.CTkButton(widget3, image= imageAlunas_ctk, hover_color= "#292B25", width=imageAlunas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(lista_alunas))
     botao_lista.grid(row=1, column=3, padx=5, pady=5)
     labelLista = ctk.CTkLabel(widget3, text= "Lista de Alunas", font= ("Segoe UI Black", 18))
     labelLista.grid(row=2, column=3, padx=5, pady=5)
+    '''
+    botao_pesquisa = ctk.CTkButton(widget3, image= imageVagas_ctk, hover_color= "#292B25", width=imageVagas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(pesquisa_alunas))
+    botao_pesquisa.grid(row=1, column=4, padx=5, pady=5)
+    labelPesquisa = ctk.CTkLabel(widget3, text= "Pesquisar Alunas", font= ("Segoe UI Black", 18))
+    labelPesquisa.grid(row=2, column=4, padx=5, pady=5)
     
     botao_inicio = ctk.CTkButton(widget3, image= imageHome_ctk, hover_color= "#292B25", width=imageHome_ctk.__sizeof__(), height=botao_altura , text="", fg_color="transparent", command=go_home)
 

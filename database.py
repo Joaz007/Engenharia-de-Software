@@ -370,27 +370,21 @@ class Academia:
         
         return "Dados da aluna atualizados com sucesso."
     
-    def buscarPorNome(self, nome_parcial: str):
-        nome_parcial = f"%{nome_parcial.lower()}%"
-
+    def buscarPorNome_ou_Cpf(self, info_parcial: str):
+        info_parcial = f"%{info_parcial.lower()}%"
+            
         with self._connect() as conn:
             cur = conn.cursor()
-            cur.execute(""" SELECT nome, apelido, cpf FROM alunas WHERE LOWER(nome) LIKE ? ORDER BY nome """, (nome_parcial,))
-
+            if info_parcial.replace("%", "").isdigit():
+                cur.execute(""" SELECT nome, cpf, nascimento, valor, vencimento FROM alunas WHERE LOWER(cpf) LIKE ? ORDER BY nome """, (info_parcial,))
+            else:
+                cur.execute(""" SELECT nome, cpf, nascimento, valor, vencimento FROM alunas WHERE LOWER(nome) LIKE ? ORDER BY nome """, (info_parcial,))
             alunas = cur.fetchall()
 
             if not alunas:
-                return "Nenhuma aluna encontrada com esse nome."
+                return None
             
-            resultado = []
-
-            for nome, apelido, cpf in alunas:
-                cur.execute(""" SELECT dia, horario FROM horarios WHERE aluna_cpf = ? ORDER BY dia, horario """, (cpf,))
-                horarios = cur.fetchall()
-
-                resultado.append({"nome": nome, "apelido": apelido, "cpf": cpf, "horarios": horarios})
-
-        return resultado
+        return alunas
     
     def aniversariantesMes(self, mes: int):
         if not (1 <= mes <= 12):
@@ -470,3 +464,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
