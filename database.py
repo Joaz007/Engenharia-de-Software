@@ -3,10 +3,90 @@ import re
 import sqlite3
 import os
 from typing import Optional, List, Tuple
-import interface as ctk
+import hashlib
+import secrets
+
 DB_PATH = "academia.db"
 WEEKDAYS = ["segunda", "terca", "quarta", "quinta", "sexta"]
+DDDS_VALIDOS = [
+    '11', '12', '13', '14', '15', '16', '17', '18', '19', # SP
+    '21', '22', '24', # RJ
+    '27', '28', # ES
+    '31', '32', '33', '34', '35', '37', '38', # MG
+    '41', '42', '43', '44', '45', '46', # PR
+    '47', '48', '49', # SC
+    '51', '53', '54', '55', # RS
+    '61', # DF
+    '62', '64', # GO
+    '63', # TO
+    '65', '66', # MT
+    '67', # MS
+    '68', # AC
+    '69', # RO
+    '71', '73', '74', '75', '77', # BA
+    '79', # SE
+    '81', '87', # PE
+    '82', # AL
+    '83', # PB
+    '84', # RN
+    '85', '88', # CE
+    '86', '89', # PI
+    '91', '93', '94', # PA
+    '92', '97', # AM
+    '95', # RR
+    '96', # AP
+    '98', '99' # MA
+]
 
+# ===== Classe Usuario (simples) =====
+class Usuario:
+    """
+    Classe simples para representar usuário com nome e senha (armazenada como hash com salt).
+    """
+    def __init__(self, nome: str, pwd_hash: str = None, salt: str = None):
+        self.nome = (nome or "").strip()
+        self.pwd_hash = pwd_hash  # hex string
+        self.salt = salt          # hex string
+
+    def set_password(self, senha: str):
+        """Gera salt curto e armazena o hash SHA256(salt + senha)."""
+        if senha is None:
+            raise ValueError("Senha não pode ser None")
+        # salt simples suficiente para uso local; para produção use PBKDF2/etc.
+        self.salt = secrets.token_hex(8)  # 8 bytes -> 16 hex chars
+        self.pwd_hash = hashlib.sha256((self.salt + senha).encode('utf-8')).hexdigest()
+
+    def check_user(self, nome: str) -> bool:
+        """Verifica se o user bate com o user armazenado."""
+        if not (self.nome and self.pwd_hash and self.salt):
+            return False
+        return self.nome
+    
+    def check_password(self, senha: str) -> bool:
+        """Verifica se a senha bate com o hash armazenado."""
+        if not (self.pwd_hash and self.salt):
+            return None
+        tentativa = hashlib.sha256((self.salt + (senha or "")).encode('utf-8')).hexdigest()
+        return self.pwd_hash
+
+    def to_db_tuple(self) -> tuple:
+        """(nome, pwd_hash, salt) - para INSERT no DB."""
+        return (self.nome, self.pwd_hash, self.salt)
+
+    @classmethod
+    def from_db_row(cls, row: tuple):
+        """Cria Usuário a partir de linha (id, nome, pwd_hash, salt) ou (nome,pwd_hash,salt)."""
+        if not row:
+            return None
+        if len(row) == 4:
+            _, nome, pwd_hash, salt = row
+        elif len(row) == 3:
+            nome, pwd_hash, salt = row
+        else:
+            raise ValueError("Formato de row inválido")
+        return cls(nome=nome, pwd_hash=pwd_hash, salt=salt)
+
+# ===== Classe Aluna e Builders/Strategies =====
 class Aluna:
     def __init__(self, nome, apelido, nascimento, cep, endereco, bairro,
                  celular, cpf, dias, diasSemana, horario, valor, vencimento, termo):
@@ -140,6 +220,7 @@ class AlunaBuilder:
                 b._data[k] = v
         return b
 
+# ===== Classe Academia (Singleton) com integração de usuarios =====
 # A classe Academia implementa Singleton: o atributo _instance e o método __new__
 # asseguram que apenas UMA instância da classe exista durante a execução.
 class Academia:
@@ -186,6 +267,14 @@ class Academia:
                 horario TEXT NOT NULL,
                 aluna_cpf TEXT NOT NULL,
                 FOREIGN KEY(aluna_cpf) REFERENCES alunas(cpf) ON DELETE CASCADE
+            )
+            ''')
+            cur.execute('''
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                pwd_hash TEXT NOT NULL,
+                salt TEXT NOT NULL
             )
             ''')
             conn.commit()
@@ -283,25 +372,21 @@ class Academia:
             
     def excluirAluna(self, cpf: str):
         cpf_limpo = ''.join(filter(str.isdigit, cpf))
-
-        if len(cpf_limpo) != 11:
-            return "CPF inválido."
         
-        with self._connect as conn:
+        with self._connect() as conn:
             cur = conn.cursor()
             #verificando se a aluna existe
-            cur.execute("SELECT nome FROM alunas WHERE cpf = ?", (cpf_limpo,))
+            cur.execute("SELECT cpf FROM alunas WHERE cpf = ?", (cpf_limpo,))
             row = cur.fetchone()
 
             if not row:
-                return "Aluna não encontrada."
+                return False
             
-            nome = row[0]
             #excluindooo
             cur.execute("DELETE FROM alunas WHERE cpf = ?", (cpf_limpo,))
             conn.commit()
 
-        return f"Aluna {nome} removida com sucesso."
+        return True
     
     def editarAluna(self, cpf: str, **novos_dados):
         cpf_limpo = ''.join(filter(str.isdigit, cpf))
@@ -399,6 +484,50 @@ class Academia:
             
         return rows
     
+    # ===== Métodos simples de gerenciamento de usuários =====
+    def add_usuario_simples(self, usuario: Usuario) -> bool:
+        """
+        Tenta inserir usuário. Retorna True se inseriu com sucesso, False se nome já existe.
+        """
+        with self._connect() as conn:
+            cur = conn.cursor()
+            try:
+                cur.execute('''
+                    INSERT INTO usuarios (nome, pwd_hash, salt) VALUES (?, ?, ?)
+                ''', usuario.to_db_tuple())
+                conn.commit()
+                return True
+            except sqlite3.IntegrityError:
+                return False
+
+    def autenticar_usuario_simples(self, nome: str, senha: str) -> Optional[Usuario]:
+        """
+        Retorna Usuario se autenticação OK, senão None.
+        """
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute('SELECT nome, pwd_hash, salt FROM usuarios WHERE nome = ?', (nome.lower(),))
+            row = cur.fetchone()
+            if not row:
+                return False
+            user = Usuario.from_db_row(row)
+            if user and user.check_password(senha):
+                return True
+            return False
+        
+    def listaUsuarios(self):
+        with self._connect() as conn:
+            cur = conn.cursor()
+            cur.execute('SELECT id, nome FROM usuarios ORDER BY nome')
+            rows = cur.fetchall()
+        if not rows:
+            print("Nenhum usuário cadastrado.")
+            return
+        print("\n=== USUÁRIOS ===")
+        for r in rows:
+            uid, nome = r
+            print(f"{uid} - {nome}")
+            
 def validar_cpf(cpf: str):
     cpf_digits = ''.join(ch for ch in cpf if ch.isdigit())
     if len(cpf_digits) != 11:
@@ -417,7 +546,43 @@ def validar_cpf(cpf: str):
     if dv2 != nums[10]:
         return False
     return True
-                       
+
+def validar_data(data: str):
+    pattern = r'^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$'
+    if not re.match(pattern, data):
+        return False
+
+    dia, mes, ano = map(int, data.split('/'))
+    if mes == 2:
+        if (ano % 4 == 0 and ano % 100 != 0) or (ano % 400 == 0):
+            if dia > 29:
+                return False
+        else:
+            if dia > 28:
+                return False
+    elif mes in {4, 6, 9, 11}:
+        if dia > 30:
+            return False
+        return True
+    else:
+        if dia > 31:
+            return False
+        return True                      
+
+def validar_telefone(telefone: str):
+    if len(telefone) != 11:
+        return False
+    
+    ddd = telefone[:2]
+    if ddd not in DDDS_VALIDOS:
+        return False
+
+    padrao_celular = re.compile(r'^\d{2}9\d{8}$')
+    if padrao_celular.match(telefone):
+        return True
+    else:
+        return False
+    
 def InserirInfosAlunas(nome, apelido, nascimento, cep, endereco, bairro, celular, cpf, quantdias, dias, horario, valor, vencimento, termo):
     # Usa o AlunaBuilder para criar a instância 
     try:
