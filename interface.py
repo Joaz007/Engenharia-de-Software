@@ -807,6 +807,9 @@ def vagasDisponiveis(janela):
             entrytext.grid(row=3, column=j, padx=5, pady=5, sticky='n')
     return widgetVagas
 
+'''
+não conseguimos finalizar essa função a tempo
+
 def mensalidades_vencidas(janela):
     academia = db.Academia()
     widgetMensalidades = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
@@ -814,6 +817,7 @@ def mensalidades_vencidas(janela):
     label = ctk.CTkLabel(widgetMensalidades, text="Página de Mensalidades", font=("Segoe UI Black", 30))
     label.pack(pady=100)
     return widgetMensalidades
+'''
 
 def pesquisa_alunas(janela):
     academia = db.Academia()
@@ -1033,7 +1037,7 @@ def entrada():
         labelEditar.grid(row=1, column=1, padx=10, pady=5)
         labelExcluir.grid(row=1, column=2, padx=10, pady=5)
         labelVagas.grid(row=1, column=3, padx=10, pady=5)
-        labelMensalidades.grid(row=1, column=4, padx=10, pady=5)
+        #labelMensalidades.grid(row=1, column=4, padx=10, pady=5)
         labelPesquisa.grid(row=1, column=5, padx=10, pady=5)
         labelAniversarios.grid(row=1, column=6, padx=10, pady=5) 
         label_titulo.configure(text="Bem vinda ao site da Lu Mafra Personal Trainer")
@@ -1069,7 +1073,7 @@ def entrada():
             labelEditar.grid_forget()
             labelExcluir.grid_forget()
             labelVagas.grid_forget()
-            labelMensalidades.grid_forget()
+            #labelMensalidades.grid_forget()
             labelPesquisa.grid_forget()
             labelAniversarios.grid_forget()
         
@@ -1103,9 +1107,11 @@ def entrada():
     botao_vagas.grid(row=0, column=3, padx=10, pady=5)
     labelVagas = ctk.CTkLabel(widget3, text= "Vagas Disponíveis", font= ("Segoe UI", 18))
 
+    '''
     botao_mensalidades = ctk.CTkButton(widget3, image= imageVenc_ctk, hover_color= "#292B25", width=imageVenc_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(mensalidades_vencidas))
     botao_mensalidades.grid(row=0, column=4, padx=10, pady=5)
     labelMensalidades = ctk.CTkLabel(widget3, text= "Mensalidades", font= ("Segoe UI", 18))
+    '''
     
     botao_pesquisa = ctk.CTkButton(widget3, image= imageAlunas_ctk, hover_color= "#292B25", width=imageAlunas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(pesquisa_alunas))
     botao_pesquisa.grid(row=0, column=5, padx=10, pady=5)
