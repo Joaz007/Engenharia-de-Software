@@ -440,16 +440,17 @@ def editar_alunas(janela):
     entryacao = None
     alunaEdit = None
     cpf_para_editar = None
-    novos_valores = []
-    entryInfo = None 
-    label_nova_info = None
+    boxInfo = None 
+    entry_nova_info = None
+    scroll = None
     switch_editar = {
         "Nome": "nome", "Data de Nascimento": "nascimento", "CEP": "cep", "Endereço": "endereco",
         "Bairro": "bairro", "Celular": "celular", "CPF": "cpf", "Quantidade de Dias": "dias",
         "Dias da Semana": "diasSemana", "Horário": "horario", "Valor da Mensalidade": "valor", "Vencimento": "vencimento"}
-
+    
+    
     def executar_edicao(alunas_listadas, scroll):
-        nonlocal entryacao, alunaEdit, cpf_para_editar, novos_valores
+        nonlocal entryacao, alunaEdit, cpf_para_editar, boxInfo, entry_nova_info
         
         if not entryacao:
             label_status.configure(text="Erro: Campo de ID não encontrado.", text_color="red")
@@ -472,149 +473,93 @@ def editar_alunas(janela):
             label_status.grid(row=2, column=0, columnspan=6, pady=5)
             return
         
-        scroll.destroy()
-        novos_valores = []
         alunaEdit = academia.listaAlunas(cpf=cpf_para_editar)
         
-        # Chama a função que inicia a interface de edição
-        exibir_interface_edicao(1) # Inicia no row 1 ou conforme a sua organização
-
-        # ----------------------------------------------------------------------------------------------------------------------
-
-    def exibir_interface_edicao(row_start):
-        nonlocal entryInfo, label_nova_info, alunaEdit
+        scroll.destroy()
+        labelInstrucao.grid_forget()
+        entryEditar.grid_forget()
         
-        # Limpa widgets de confirmação anteriores, se existirem
         for widget in widgetEditar.grid_slaves():
-            if int(widget.grid_info()["row"]) >= row_start:
+            if int(widget.grid_info()["row"]) >= 2:
                 widget.destroy()
-
-        label_status.configure(text=f"Selecione o campo para editar de {alunaEdit[0][1]}:")
-        label_status.grid(row=row_start, column=0, columnspan=2, pady=5)
+                
+        label_status.configure(text=f"Selecione o campo para editar de {alunaEdit[0][1]}:", text_color="white")
+        label_status.grid(row=1, column=1, padx=5, pady=10, sticky=E)
         
-        # Campo de seleção da informação a ser editada
-        entryInfo = ctk.CTkComboBox(
+        boxInfo = ctk.CTkComboBox(
             widgetEditar, 
             values=list(switch_editar.keys()), 
             font=("Arial", 15), 
-            width=200, 
-            command=lambda selection: atualizar_label_antiga_info(selection, row_start + 1) # Chama função ao selecionar
+            width=200
         )
-        entryInfo.grid(row=row_start, column=2, pady=5)
-        entryInfo.set("Selecione uma informação")
-        
-        # Campo para inserir o novo valor (criado, mas só preenchido após seleção)
-        label_nova_info = ctk.CTkEntry(
+        boxInfo.grid(row=1, column=2, columnspan=2, pady=10)
+        boxInfo.set("Selecione uma informação")
+        entry_nova_info = ctk.CTkEntry(
             widgetEditar, 
             placeholder_text="Insira a nova informação:", 
-            font=("Arial", 15)
+            font=("Arial", 15),
+            width=200
         )
-        label_nova_info.grid(row=row_start + 2, column=3, columnspan=2, pady=5)
+        entry_nova_info.grid(row=3, column=2, columnspan=2, pady=10)
         
-        # Botão de Ação: Chama 'processar_edicao' para coletar e continuar
-        btn_adicionar = ctk.CTkButton(
-            widgetEditar, 
-            text="Adicionar Edição", 
-            command=lambda: processar_edicao(row_start + 4)
-        )
-        btn_adicionar.grid(row=row_start + 3, column=0, columnspan=6, pady=10)
+        def atualizar_mascara(valor):
+            try:
+                entry_nova_info.unbind("<KeyRelease>")
+            except Exception:
+                pass
 
-    def atualizar_label_antiga_info(selection, row):
-        nonlocal alunaEdit
+            if valor == "Data de Nascimento":
+                entry_nova_info.bind("<KeyRelease>", formatar_data)
+            elif valor == "CPF":
+                entry_nova_info.bind("<KeyRelease>", formatar_cpf)
+            elif valor == "Celular":
+                entry_nova_info.bind("<KeyRelease>", formatar_telefone)
+            else:
+                pass
+
+        boxInfo.configure(command=lambda v=None: atualizar_mascara(boxInfo.get()))
         
-        try:
-            campo_db = switch_editar[selection]
-            valor_antigo = alunaEdit[0].get(campo_db, "Não encontrado")
+        botaoPesquisar.configure(text="Editar", command= lambda: exibeTexto())
+        
+        def exibeTexto():
+            campo = switch_editar.get(boxInfo.get())
+            novo_valor = entry_nova_info.get().strip()
 
-            for widget in widgetEditar.grid_slaves():
-                if widget.winfo_class() == "CTkLabel" and widget.grid_info().get("row") == row:
-                    widget.destroy()
+            if campo is None:
+                label_status.configure(text="Selecione um campo válido.", text_color="red")
+                return
+
+            dados = {campo: novo_valor}
+
+            # para "Dias da Semana" e "Horário"
+            if campo == "diasSemana":
+                dados["diasSemana"] = novo_valor.split(",")
+            if campo == "horario":
+                dados["horario"] = novo_valor.split(",")
+
+            resultado = academia.editarAluna(cpf_para_editar, **dados)
+
+            labelResultado = ctk.CTkLabel(widgetEditar, text=resultado, font=("Segoe UI", 15))
+            labelResultado.grid(row=4, column=0, columnspan=6, pady=5)
+            
+            def restaurar_interface():
+                # Destrói todos os elementos específicos da fase de edição
+                boxInfo.destroy() 
+                entry_nova_info.destroy()
+                labelResultado.destroy()
+                label_status.destroy()
+
+                # Restaura os widgets de busca para a Fase 1
+                labelInstrucao.grid(row=1, column=1, padx=5, pady=10, sticky=E)
+                entryEditar.grid(row=1, column=2, columnspan=2, pady=10) 
+                botaoPesquisar.configure(text="Buscar", command=lambda: buscar_alunas())
                 
-            label_antiga_info = ctk.CTkLabel(
-                widgetEditar, 
-                text=f"Você está mudando {selection} (Valor atual: {valor_antigo}) para:", 
-                font=("Arial", 15)
-            )
-            label_antiga_info.grid(row=row, column=0, columnspan=3, pady=5)
-        except KeyError:
-            pass
-            
-    def processar_edicao(row_start):
-        nonlocal novos_valores, entryInfo, label_nova_info
-        
-        campo_selecionado = entryInfo.get()
-        novo_valor = label_nova_info.get().strip()
-
-        if campo_selecionado == "Selecione uma informação" or not novo_valor:
-            label_status.configure(text="Erro: Selecione um campo e insira um valor.", text_color="red")
-            label_status.grid(row=2, column=0, columnspan=6, pady=5)
-            return
-            
-        # 2. Armazena a edição
-        campo_db = switch_editar[campo_selecionado]
-        novos_valores.append({campo_db: novo_valor})
-
-        # Limpa widgets da iteração anterior
-        for widget in widgetEditar.grid_slaves():
-            if int(widget.grid_info()["row"]) >= row_start - 3:
-                widget.destroy()
-
-        # 3. Pergunta de continuação (Nova interface)
-        label_status.configure(text=f"Campo '{campo_selecionado}' adicionado para edição. Deseja alterar mais alguma coisa?")
-        
-        label_confirmar = ctk.CTkLabel(widgetEditar, text="Deseja alterar mais alguma informação?", font=("Arial", 15))
-        label_confirmar.grid(row=row_start, column=0, columnspan=3, pady=5)
-        
-        btn_sim = ctk.CTkButton(widgetEditar, text="Sim (Adicionar Outro)", command=lambda: exibir_interface_edicao(row_start + 2))
-        btn_sim.grid(row=row_start, column=3, padx=10, pady=5)
-        
-        btn_nao = ctk.CTkButton(widgetEditar, text="Não (Finalizar Edição)", command=finalizar_edicao)
-        btn_nao.grid(row=row_start, column=4, padx=10, pady=5)
-
-    def finalizar_edicao():
-        nonlocal novos_valores, cpf_para_editar, alunaEdit, label_status, academia
+            if resultado == "Dados da aluna atualizados com sucesso.":
+                labelResultado.after(2000, restaurar_interface)
+            else:
+                labelResultado.after(2000, labelResultado.destroy)
                 
-        # Destrói a interface de confirmação/continuação
-        for widget in widgetEditar.grid_slaves():
-            widget.destroy()
-            
-        if not novos_valores:
-            label_status.configure(text="Nenhuma alteração registrada.")
-            label_status.grid(row=2, column=0, columnspan=6, pady=5)
-            return
-            
-        # Converte a lista de dicionários em um único dicionário para a função editarAluna
-        dados_para_db = {}
-        for item in novos_valores:
-            dados_para_db.update(item)
-            
-        # Chama a função de edição do banco de dados (academia.editarAluna)
-        text = academia.editarAluna(cpf_para_editar, **dados_para_db)
         
-        # Exibe o Pop-up de Confirmação (igual ao seu original)
-        popup_window = ctk.CTkToplevel(widgetEditar)
-        popup_window.title("Confirmação de Edição")
-        popup_window.geometry("400x150")
-        popup_window.transient(widgetEditar) # Mantém a janela no topo
-        
-        labEditar = ctk.CTkLabel(popup_window, text="", font=("Arial", 15))
-        labEditar.pack(pady=15)
-        
-        cor = "red"
-        if text == "Dados da aluna atualizados com sucesso.":
-            cor = "green"
-        
-        labEditar.configure(text=text, text_color=cor)
-
-        def fechar_e_atualizar():
-            popup_window.destroy()
-            # Assume que buscar_alunas é a função que atualiza a lista principal
-            buscar_alunas() 
-            
-        confirmar = ctk.CTkButton(popup_window, text="Ok", command=fechar_e_atualizar)
-        confirmar.pack(pady=10)
-        popup_window.grab_set()
-                
     def buscar_alunas():
         nonlocal entryacao
         
@@ -624,9 +569,9 @@ def editar_alunas(janela):
                 
         label_status.configure(text="")
         label_status.grid_forget()
-        
+
         scroll = ctk.CTkScrollableFrame(widgetEditar, fg_color="transparent")
-        scroll.place(relx=0.5, rely=0.6, anchor=CENTER, relwidth=0.9, relheight=0.7)
+        scroll.grid(row=2, column=0, columnspan=6, sticky="nsew", padx=20, pady=10)
         scroll.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         
         alunas = academia.buscarPorNome_ou_Cpf(entryEditar.get().strip())
