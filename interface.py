@@ -12,7 +12,7 @@ import database as db #importa o arquivo database.py para manipulação do banco
 #exibir a lista de alunas por turma
 #remover aluna
 #editar aluna
-#aniversariantes do mês
+#aniversariantes do mês - ok
 #alunas com mensalidades atrasadas
 #criar um banco de dados - ok
 imageAdd_ctk = ctk.CTkImage(dark_image= Image.open("imagens/add.png"), size=(30, 30))
@@ -21,6 +21,7 @@ imageHome_ctk = ctk.CTkImage(dark_image= Image.open("imagens/home.png"), size=(3
 imageFit_ctk = ctk.CTkImage(dark_image= Image.open("imagens/fit.png"), size=(30, 30))
 imageNiver_ctk = ctk.CTkImage(dark_image= Image.open("imagens/niver.png"), size=(30, 30))
 imagePay_ctk = ctk.CTkImage(dark_image= Image.open("imagens/pay.png"), size=(30, 30))
+imageEdit_ctk = ctk.CTkImage(dark_image= Image.open("imagens/person_edit.png"), size=(30, 30))
 imageRemove_ctk = ctk.CTkImage(dark_image= Image.open("imagens/remove.png"), size=(30, 30))
 imageVenc_ctk = ctk.CTkImage(dark_image= Image.open("imagens/venc.png"), size=(30, 30))
 imageVoltar_ctk = ctk.CTkImage(dark_image= Image.open("imagens/voltar.png"), size=(30, 30))
@@ -121,7 +122,7 @@ def verificar_cep(cep):
             return data
     except requests.exceptions.RequestException as e:
         return None, f"Erro de conexão: {e}"
-    
+
 def cadastro(janela):
     novaAluna = db.AlunaBuilder()
     
@@ -277,23 +278,23 @@ def cadastro(janela):
     
     def continuar():
         # Validação simples
-        entryNome.configure(border_color="gray")
-        entryCPF.configure(border_color="gray")
-        entryData.configure(border_color="gray")
-        entryNumero.configure(border_color="gray")
-        labelQuantDias.configure(text_color="white")
-        labelVencimento.configure(text_color="white")
-        checkTermo.configure(border_color="gray")
+        entryNome.configure(border_color="#565B5E")
+        entryCPF.configure(border_color="#565B5E")
+        entryData.configure(border_color="#565B5E")
+        entryNumero.configure(border_color="#565B5E")
+        labelQuantDias.configure(text_color="#FFFFFF")
+        labelVencimento.configure(text_color="#FFFFFF")
+        checkTermo.configure(border_color="#565B5E")
         if (not entryNome.get().strip()):
             entryNome.configure(border_color="red")
             return
         if not entryCPF.get().strip() or not db.validar_cpf(entryCPF.get()):
             entryCPF.configure(border_color="red")
             return
-        if (not entryData.get().strip()):
+        if (not entryData.get().strip() or not db.validar_data(entryData.get())):
             entryData.configure(border_color="red")
             return
-        if (not entryNumero.get().strip()):
+        if (not entryNumero.get().strip() or not db.validar_telefone(entryNumero.get())):
             entryNumero.configure(border_color="red")
             return
         if (not dia_semana.get()):
@@ -376,12 +377,12 @@ def cadastro(janela):
         entryDiasSemana3.set("")
         entryHorario3.set("")
         
-        entryNome.configure(border_color="gray")
-        entryCPF.configure(border_color="gray")
-        entryData.configure(border_color="gray")
-        entryNumero.configure(border_color="gray")
-        labelVencimento.configure(text_color="gray")
-        checkTermo.configure(border_color="gray")
+        entryNome.configure(border_color="#565B5E")
+        entryCPF.configure(border_color="#565B5E")
+        entryData.configure(border_color="#565B5E")
+        entryNumero.configure(border_color="#565B5E")
+        labelVencimento.configure(text_color="white")
+        checkTermo.configure(border_color="#565B5E")
         
     def enviar_dados():
         labelverificacao.configure(text="")  # Limpa a mensagem de verificação
@@ -418,7 +419,147 @@ def cadastro(janela):
             print("Erro ao enviar os dados.")
     
     return frameCadastro
+
+def editar_alunas(janela):
+    academia = db.Academia()
+    widgetEditar = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+    widgetEditar.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
+    label = ctk.CTkLabel(widgetEditar, text="Página de Edição de Alunas", font=("Segoe UI Black", 30))
+    label.pack(pady=100)
+    return widgetEditar
+
+def excluir_alunas(janela):
+    academia = db.Academia()
+    widgetExcluir = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+    widgetExcluir.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
+    widgetExcluir.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+
+    label = ctk.CTkLabel(widgetExcluir, text="Excluir Aluna", font=("Segoe UI Black", 30))
+    label.grid(row=0, column=0, columnspan=6, pady=20)
+
+    labelInstrucao = ctk.CTkLabel(widgetExcluir, text="Insira o nome ou CPF da aluna:", font=("Arial", 15))
+    labelInstrucao.grid(row=1, column=1, padx=5, pady=10, sticky=E)
+    entryExcluir = ctk.CTkEntry(widgetExcluir, font=("Arial", 15), width=300)
+    entryExcluir.grid(row=1, column=2, columnspan=2, pady=10)
+    botaoPesquisar = ctk.CTkButton(widgetExcluir, text="Buscar", font=("Arial", 15), command=lambda: buscar_alunas())
+    botaoPesquisar.grid(row=1, column=4, pady=10, sticky=W)
+    
+    label_status = ctk.CTkLabel(widgetExcluir, text="", font=("Arial", 15))
         
+    entryacao = None
+    
+    # Função para executar a exclusão
+    def executar_exclusao(alunas_listadas, scroll):
+        nonlocal entryacao
+        if not entryacao:
+            label_status.configure(text="Erro: Campo de ID não encontrado.", text_color="red")
+            label_status.grid(row=2, column=0, columnspan=6, pady=5)
+            return
+            
+        try:
+            id_visual = int(entryacao.get().strip())
+            cpf_para_excluir = alunas_listadas[id_visual - 1][1]
+        except ValueError:
+            label_status.configure(text="Erro: Insira um ID numérico válido.", text_color="red")
+            label_status.grid(row=2, column=0, columnspan=6, pady=5)
+            return
+        except IndexError:
+            label_status.configure(text="Erro: ID fora do intervalo da lista.", text_color="red")
+            label_status.grid(row=2, column=0, columnspan=6, pady=5)
+            return
+
+        # Pop-up de confirmação
+        popup_window = ctk.CTkToplevel(widgetExcluir)
+        popup_window.title("Confirmação de Exclusão")
+        popup_window.geometry("400x150")
+        
+        labExcluir = ctk.CTkLabel(popup_window, text=f"Deseja realmente excluir {alunas_listadas[id_visual - 1][0]}?", font=("Arial", 15))
+        labExcluir.pack(pady=15)
+        
+        def confirmar():
+            nonlocal entryacao
+            if entryacao:
+                entryacao.destroy()
+                entryacao = None
+                
+            resultado = academia.excluirAluna(cpf_para_excluir)
+            
+            if resultado:
+                confirmar.destroy()
+                cancelar.destroy()
+                labExcluir.configure(text="Aluna excluída com sucesso.", text_color="green")
+            else:
+                labExcluir.configure(text="Erro ao excluir aluna ou CPF não encontrado.", text_color="red")
+            
+            labExcluir.after(2000, lambda: (popup_window.destroy(), buscar_alunas()))
+        
+        confirmar = ctk.CTkButton(popup_window, text="Confirmar", command=confirmar, fg_color="red")
+        confirmar.pack(side="left", padx=20)
+        cancelar = ctk.CTkButton(popup_window, text="Cancelar", command=popup_window.destroy)
+        cancelar.pack(side="right", padx=20)
+        popup_window.grab_set()
+
+    def buscar_alunas():
+        nonlocal entryacao
+        
+        for widget in widgetExcluir.winfo_children():
+            if isinstance(widget, ctk.CTkScrollableFrame):
+                widget.destroy()
+                
+        label_status.configure(text="")
+        label_status.grid_forget()
+        
+        scroll = ctk.CTkScrollableFrame(widgetExcluir, fg_color="transparent")
+        scroll.place(relx=0.5, rely=0.6, anchor=CENTER, relwidth=0.9, relheight=0.7)
+        scroll.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+        
+        alunas = academia.buscarPorNome_ou_Cpf(entryExcluir.get().strip())
+        
+        # Limpa o campo de ação antigo
+        if entryacao:
+            entryacao.destroy()
+            entryacao = None
+            
+        if not alunas:
+            labelaluna = ctk.CTkLabel(scroll, text="Nenhuma aluna encontrada com essa informação", font=("Arial", 18))
+            labelaluna.grid(row=0, column=0, columnspan=6, pady=10, padx=5)
+        else:            
+            # Cabeçalhos
+            labelID = ctk.CTkLabel(scroll, text="ID", font=("Arial", 15))
+            labelID.grid(row=0, column=0, pady=5, padx=5)
+            labelnome = ctk.CTkLabel(scroll, text="Nome", font=("Arial", 15))
+            labelnome.grid(row=0, column=1, pady=5, padx=5)
+            labelcpf = ctk.CTkLabel(scroll, text="CPF", font=("Arial", 15))
+            labelcpf.grid(row=0, column=2, pady=5, padx=5)
+            labelvalor = ctk.CTkLabel(scroll, text="Valor", font=("Arial", 15))
+            labelvalor.grid(row=0, column=3, pady=5, padx=5)
+            labelvencimento = ctk.CTkLabel(scroll, text="Vencimento", font=("Arial", 15))
+            labelvencimento.grid(row=0, column=4, pady=5, padx=5)
+
+            # Campo e Botão de Ação (criados no scroll para centralizar)
+            entryacao = ctk.CTkEntry(scroll, placeholder_text="ID", font=("Arial", 12), width=50)
+            entryacao.grid(row=0, column=5, pady=5, padx=5, sticky=W)
+            
+            # Passa a lista de alunas para o comando de exclusão
+            botaoEnter = ctk.CTkButton(scroll, text="Excluir", font=("Arial", 12), command=lambda: executar_exclusao(alunas, scroll))
+            botaoEnter.grid(row=0, column=5, pady=5, padx=5, sticky=E)
+
+            for i, aluna in enumerate(alunas, start=1):
+                nome, cpf, nascimento, valor, vencimento = aluna
+                
+                entryID = ctk.CTkLabel(scroll, text=str(i), font=("Arial", 15)) # i = ID visual
+                entryID.grid(row=i, column=0, pady=5, padx=5)
+                entrynome = ctk.CTkLabel(scroll, text=nome, font=("Arial", 15))
+                entrynome.grid(row=i, column=1, pady=5, padx=5)
+                entrycpf = ctk.CTkLabel(scroll, text=cpf, font=("Arial", 15))
+                entrycpf.grid(row=i, column=2, pady=5, padx=5)
+                entryvalor = ctk.CTkLabel(scroll, text=f"R${valor:.2f}", font=("Arial", 15))
+                entryvalor.grid(row=i, column=3, pady=5, padx=5)
+                entryvencimento = ctk.CTkLabel(scroll, text=str(vencimento), font=("Arial", 15))
+                entryvencimento.grid(row=i, column=4, pady=5, padx=5)
+
+    return widgetExcluir
+  
 def vagasDisponiveis(janela):
     academia = db.Academia()
     widgetVagas = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
@@ -480,61 +621,7 @@ def mensalidades_vencidas(janela):
     label = ctk.CTkLabel(widgetMensalidades, text="Página de Mensalidades", font=("Segoe UI Black", 30))
     label.pack(pady=100)
     return widgetMensalidades
-"""
-def lista_alunas(janela):
-    academia = db.Academia()
-    widgetLista = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
-    widgetLista.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
-    widgetLista.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
-    widgetLista.grid_rowconfigure(1, weight=1)
-    
-    label = ctk.CTkLabel(widgetLista, text="Lista de Alunas", font=("Segoe UI Black", 30))
-    label.grid(row=0, column=0, columnspan=7, padx=5, pady=20)
 
-    scroll_frame = ctk.CTkScrollableFrame(widgetLista, fg_color="transparent")
-    scroll_frame.grid(row=1, column=0, columnspan=7, sticky="nsew", padx=10, pady=10)
-    scroll_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
-
-    label_cabecalhoNome = ctk.CTkLabel(scroll_frame, text="Nome", font=("Arial", 15, "bold"))
-    label_cabecalhoNome.grid(row=0, column=0, pady=10)
-    label_cabecalhoApelido = ctk.CTkLabel(scroll_frame, text="Apelido", font=("Arial", 15, "bold"))
-    label_cabecalhoApelido.grid(row=0, column=1, padx=5, pady=10)
-    label_cabecalhoCPF = ctk.CTkLabel(scroll_frame, text="CPF", font=("Arial", 15, "bold"))
-    label_cabecalhoCPF.grid(row=0, column=2, pady=10)
-    label_cabecalhoDias = ctk.CTkLabel(scroll_frame, text="Dias", font=("Arial", 15, "bold"))
-    label_cabecalhoDias.grid(row=0, column=3, pady=10)
-    label_cabecalhoHorario = ctk.CTkLabel(scroll_frame, text="Horário", font=("Arial", 15, "bold"))
-    label_cabecalhoHorario.grid(row=0, column=4, pady=10)
-    label_cabecalhoValor = ctk.CTkLabel(scroll_frame, text="Valor", font=("Arial", 15, "bold"))
-    label_cabecalhoValor.grid(row=0, column=5, pady=10)
-    label_cabecalhoVencimento = ctk.CTkLabel(scroll_frame, text="Vencimento", font=("Arial", 15, "bold"))
-    label_cabecalhoVencimento.grid(row=0, column=6, padx=5, pady=10)
-
-    alunas = academia.listaAlunas()
-    if alunas == []:
-        labelNenhuma = ctk.CTkLabel(scroll_frame, text="Nenhuma aluna cadastrada.", font=("Arial", 15))
-        labelNenhuma.grid(row=1, column=0, columnspan=7, padx=5, pady=5)
-        return widgetLista
-    for i, aluna in enumerate(alunas, start=1):
-        nome, apelido, cpf, dias, horario, valor, vencimento = aluna
-        
-        entryNome = ctk.CTkLabel(scroll_frame, text=nome, font=("Arial", 15))
-        entryNome.grid(row=i, column=0, padx=5, pady=5)
-        entryApelido = ctk.CTkLabel(scroll_frame, text=apelido, font=("Arial", 15))
-        entryApelido.grid(row=i, column=1, padx=5, pady=5)
-        entryCPF = ctk.CTkLabel(scroll_frame, text=cpf, font=("Arial", 15))
-        entryCPF.grid(row=i, column=2, padx=5, pady=5)
-        entryDias = ctk.CTkLabel(scroll_frame, text=dias, font=("Arial", 15))
-        entryDias.grid(row=i, column=3, padx=5, pady=5)
-        entryHorario = ctk.CTkLabel(scroll_frame, text=horario, font=("Arial", 15))
-        entryHorario.grid(row=i, column=4, padx=5, pady=5)
-        entryValor = ctk.CTkLabel(scroll_frame, text=f"R${valor}", font=("Arial", 15))
-        entryValor.grid(row=i, column=5, padx=5, pady=5)
-        entryVencimento = ctk.CTkLabel(scroll_frame, text=vencimento, font=("Arial", 15))
-        entryVencimento.grid(row=i, column=6, padx=5, pady=5)
-
-    return widgetLista
-"""
 def pesquisa_alunas(janela):
     academia = db.Academia()
     widgetPesquisa = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
@@ -548,48 +635,49 @@ def pesquisa_alunas(janela):
     label_pesquisar.grid(row=1, column=1, pady=10, padx=5, sticky=E)
     entry_pesquisar = ctk.CTkEntry(widgetPesquisa, font=("Arial", 15), width=300)
     entry_pesquisar.grid(row=1, column=2, pady=10, padx=5, sticky=W)
-    botao_pesquisar = ctk.CTkButton(widgetPesquisa, text="Pesquisar", font=("Arial", 15), command=lambda: pesquisar())
-    botao_pesquisar.grid(row=1, column=3, pady=10, sticky=W)
+    botao_pesquisar = ctk.CTkButton(widgetPesquisa, text="Pesquisar", font=("Arial", 15), command=lambda: pesquisar(widgetPesquisa, entry_pesquisar, academia))
+    botao_pesquisar.grid(row=1, column=4, pady=10, sticky=W)
     
-    def pesquisar():
-        scroll = ctk.CTkScrollableFrame(widgetPesquisa, fg_color="transparent")
-        scroll.place(relx=0.5, rely=0.6, anchor=CENTER, relwidth=0.9, relheight=0.7)
-        scroll.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
-        for widget in scroll.winfo_children():
-            if int(widget.grid_info().get("row")) >= 2:
-                widget.destroy()
-                
-        alunas = academia.buscarPorNome_ou_Cpf(entry_pesquisar.get().strip())
-        
-        if not alunas:
-            labelaluna = ctk.CTkLabel(scroll, text="Nenhuma aluna encontrada com essa informação", font=("Arial", 18))
-            labelaluna.grid(row=2, column=0, columnspan=5, pady=10, padx=5)
-        else:
-            labelnome = ctk.CTkLabel(scroll, text="Nome", font=("Arial", 15))
-            labelnome.grid(row=2, column=0, pady=5, padx=5)
-            labelcpf = ctk.CTkLabel(scroll, text="CPF", font=("Arial", 15))
-            labelcpf.grid(row=2, column=1, pady=5, padx=5)
-            labelnascimento = ctk.CTkLabel(scroll, text="Data de Nascimento", font=("Arial", 15))
-            labelnascimento.grid(row=2, column=2, pady=5, padx=5)
-            labelvalor = ctk.CTkLabel(scroll, text="Valor", font=("Arial", 15))
-            labelvalor.grid(row=2, column=3, pady=5, padx=5)
-            labelvencimento = ctk.CTkLabel(scroll, text="Vencimento", font=("Arial", 15))
-            labelvencimento.grid(row=2, column=4, pady=5, padx=5)
-            
-            for i, aluna in enumerate(alunas, start=3):
-                nome, cpf, nascimento, valor, vencimento = aluna
-                
-                entrynome = ctk.CTkLabel(scroll, text=nome, font=("Arial", 15))
-                entrynome.grid(row=i, column=0, pady=5, padx=5)
-                entrycpf = ctk.CTkLabel(scroll, text=cpf, font=("Arial", 15))
-                entrycpf.grid(row=i, column=1, pady=5, padx=5)
-                entrynascimento = ctk.CTkLabel(scroll, text=nascimento, font=("Arial", 15))
-                entrynascimento.grid(row=i, column=2, pady=5, padx=5)
-                entryvalor = ctk.CTkLabel(scroll, text=f"R${valor:.2f}", font=("Arial", 15))
-                entryvalor.grid(row=i, column=3, pady=5, padx=5)
-                entryvencimento = ctk.CTkLabel(scroll, text=str(vencimento), font=("Arial", 15))
-                entryvencimento.grid(row=i, column=4, pady=5, padx=5)
     return widgetPesquisa
+
+def pesquisar(widget, entry, academia):
+    scroll = ctk.CTkScrollableFrame(widget, fg_color="transparent")
+    scroll.place(relx=0.5, rely=0.6, anchor=CENTER, relwidth=0.9, relheight=0.7)
+    scroll.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+    for widget in scroll.winfo_children():
+        if int(widget.grid_info().get("row")) >= 2:
+            widget.destroy()
+            
+    alunas = academia.buscarPorNome_ou_Cpf(entry.get().strip())
+
+    if not alunas:
+        labelaluna = ctk.CTkLabel(scroll, text="Nenhuma aluna encontrada com essa informação", font=("Arial", 18))
+        labelaluna.grid(row=2, column=0, columnspan=5, pady=10, padx=5)
+    else:
+        labelnome = ctk.CTkLabel(scroll, text="Nome", font=("Arial", 15))
+        labelnome.grid(row=2, column=0, pady=5, padx=5)
+        labelcpf = ctk.CTkLabel(scroll, text="CPF", font=("Arial", 15))
+        labelcpf.grid(row=2, column=1, pady=5, padx=5)
+        labelnascimento = ctk.CTkLabel(scroll, text="Data de Nascimento", font=("Arial", 15))
+        labelnascimento.grid(row=2, column=2, pady=5, padx=5)
+        labelvalor = ctk.CTkLabel(scroll, text="Valor", font=("Arial", 15))
+        labelvalor.grid(row=2, column=3, pady=5, padx=5)
+        labelvencimento = ctk.CTkLabel(scroll, text="Vencimento", font=("Arial", 15))
+        labelvencimento.grid(row=2, column=4, pady=5, padx=5)
+        
+        for i, aluna in enumerate(alunas, start=3):
+            nome, cpf, nascimento, valor, vencimento = aluna
+            
+            entrynome = ctk.CTkLabel(scroll, text=nome, font=("Arial", 15))
+            entrynome.grid(row=i, column=0, pady=5, padx=5)
+            entrycpf = ctk.CTkLabel(scroll, text=cpf, font=("Arial", 15))
+            entrycpf.grid(row=i, column=1, pady=5, padx=5)
+            entrynascimento = ctk.CTkLabel(scroll, text=nascimento, font=("Arial", 15))
+            entrynascimento.grid(row=i, column=2, pady=5, padx=5)
+            entryvalor = ctk.CTkLabel(scroll, text=f"R${valor:.2f}", font=("Arial", 15))
+            entryvalor.grid(row=i, column=3, pady=5, padx=5)
+            entryvencimento = ctk.CTkLabel(scroll, text=str(vencimento), font=("Arial", 15))
+            entryvencimento.grid(row=i, column=4, pady=5, padx=5)
 
 def aniversarios_do_mes(janela):
     academia = db.Academia()
@@ -684,7 +772,7 @@ def entrada():
     widget1 = ctk.CTkFrame(janela, fg_color="transparent")
     widget1.place(relx=0.5, rely=0.15, anchor=CENTER)
     set_theme = ctk.get_appearance_mode()
-    label_titulo = ctk.CTkLabel(widget1, text="Lu Mafra Personal Trainer", font=("Arial", 30, "bold"), text_color="light green" if set_theme == "Dark" else "green")
+    label_titulo = ctk.CTkLabel(widget1, text="Lu Mafra Personal Trainer", font=("Segoe UI Black", 30, "bold"), text_color="light green" if set_theme == "Dark" else "green")
     label_titulo.pack()
     
     # widget2 (Container do Logo)
@@ -700,9 +788,44 @@ def entrada():
     # widget3 (Container do Menu)
     botao_altura = int(screen_height * 0.02)
     widget3 = ctk.CTkFrame(janela, fg_color="transparent")
-    widget3.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
-            
+    widget3.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6, 7), weight=1)
+    
     #funções de navegação entre páginas
+    def autenticacao(janela):
+        widgetAutenticacao = ctk.CTkFrame(janela, fg_color="transparent")
+        labelUser = ctk.CTkLabel(widgetAutenticacao, text="Usuário:", font=("Segoe UI Black", 20))
+        labelUser.grid(row=0, column=0, padx=5, pady=5)
+        entryUser = ctk.CTkEntry(widgetAutenticacao, font=("Arial", 20))
+        entryUser.grid(row=0, column=1, padx=5, pady=5)
+        labelSenha = ctk.CTkLabel(widgetAutenticacao, text="Senha:", font=("Segoe UI Black", 20))
+        labelSenha.grid(row=1, column=0, padx=5, pady=5)
+        entrySenha = ctk.CTkEntry(widgetAutenticacao, font=("Arial", 20), show="*")
+        entrySenha.grid(row=1, column=1, padx=5, pady=5)
+        
+        botaoLogin = ctk.CTkButton(widgetAutenticacao, image=imageInput_ctk, hover_color= "#292B25", width=imageInput_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: autenticar())
+        botaoLogin.grid(row=2, column=0, padx=5, pady=5)
+        labelLogin = ctk.CTkLabel(widgetAutenticacao, text="Login", font=("Segoe UI", 12))
+        labelLogin.grid(row=3, column=0, padx=5, pady=5, sticky=N)
+        
+        botao_cadastroUser = ctk.CTkButton(widgetAutenticacao, image= imageFit_ctk, hover_color= "#292B25", width=imageFit_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(cadastroUser))
+        botao_cadastroUser.grid(row=2, column=1, padx=5, pady=5)
+        labelCadastroUser = ctk.CTkLabel(widgetAutenticacao, text= "Novo Usuário", font= ("Segoe UI", 12))
+        labelCadastroUser.grid(row=3, column=1, padx=5, pady=5)
+        
+        widgetAutenticacao.place(relx=0.35, rely=0.5, anchor=CENTER)
+        
+        def autenticar():
+            academia = db.Academia()
+            if  academia.autenticar_usuario_simples(entryUser.get().strip(), entrySenha.get().strip()):
+                widgetAutenticacao.destroy()
+                go_home()
+            else:
+                erro_label = ctk.CTkLabel(janela, text="Usuário ou senha incorretos.", text_color="red", font=("Arial", 20))
+                erro_label.place(relx=0.36, rely=0.6, anchor=CENTER)
+                erro_label.after(2000, erro_label.destroy)
+                
+        return widgetAutenticacao
+    
     def go_home():        
         #Destrói a página ativa
         if app_state["active_page_frame"]:
@@ -711,9 +834,15 @@ def entrada():
             
         #Restaura o layout da "Home"
         widget1.place(relx=0.5, rely=0.15, anchor=CENTER) # Mostra o Título
-        widget2.place(relx=0.5, rely=0.55, anchor=CENTER) # Move o Logo para o centro
-        widget3.place(relx=0.5, rely=0.30, anchor=CENTER) # Move o Menu para o centro
-        
+        widget2.place(relx=0.5, rely=0.6, anchor=CENTER) # Move o Logo para o centro
+        widget3.place(relx=0.5, rely=0.3, anchor=CENTER) # Move o Menu para o centro
+        labelCadastroAluna.grid(row = 1, column=0, padx=10, pady=5)
+        labelEditar.grid(row=1, column=1, padx=10, pady=5)
+        labelExcluir.grid(row=1, column=2, padx=10, pady=5)
+        labelVagas.grid(row=1, column=3, padx=10, pady=5)
+        labelMensalidades.grid(row=1, column=4, padx=10, pady=5)
+        labelPesquisa.grid(row=1, column=5, padx=10, pady=5)
+        labelAniversarios.grid(row=1, column=6, padx=10, pady=5) 
         label_titulo.configure(text="Bem vinda ao site da Lu Mafra Personal Trainer")
         #Restaura a imagem grande
         if labelImagemGrande:
@@ -732,79 +861,112 @@ def entrada():
         widget1.place_forget()
         
         #Move o Menu e o Logo para o TOPO
-        widget3.place(relx=0.5, rely=0.17, anchor=N)
-        widget3.rowconfigure(1, weight=0)
-        widget2.place(relx=0.5, rely=0.02, anchor=N)
+        if page_function == cadastroUser:
+            widget2.place(relx=0.5, rely=0.1, anchor=N)
+            widget2.configure(width=screen_width * 0.1, height=screen_height * 0.1)
+            widget3.place_forget()
+        elif page_function == autenticacao:
+            widget1.place(relx=0.5, rely=0.15, anchor=CENTER)
+            widget2.place(relx=0.65, rely=0.5, anchor=CENTER)
+            widget3.place_forget()
+        else:
+            widget2.place(relx=0.5, rely=0.02, anchor=N)
+            widget3.place(relx=0.5, rely=0.17, anchor=N)
+            labelCadastroAluna.grid_forget()
+            labelEditar.grid_forget()
+            labelExcluir.grid_forget()
+            labelVagas.grid_forget()
+            labelMensalidades.grid_forget()
+            labelPesquisa.grid_forget()
+            labelAniversarios.grid_forget()
         
         #Muda para a imagem pequena
         if labelImagemPequena:
             label_da_imagem.configure(image=labelImagemPequena)
             
-        #Mostra o botão "Início" (na coluna 5 do grid do widget2)
-        botao_inicio.grid(row=1, column=6, padx=5, pady=5)
+        #Mostra o botão "Início" (na coluna 7 do grid do widget3)
+        if page_function != autenticacao:
+            botao_inicio.grid(row=0, column=7, padx=10, pady=5)
+        else:
+            botao_inicio.grid_forget()
         
         #Cria e armazena a nova página
         app_state["active_page_frame"] = page_function(janela)
 
     #botões do menu
-    botao_cadastro = ctk.CTkButton(widget3, image= imageAdd_ctk, hover_color= "#292B25", width=imageAdd_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(cadastro))
-    botao_cadastro.grid(row=1, column=0, padx=5, pady=5)
-    labelCadastro = ctk.CTkLabel(widget3, text= "Cadastro", font= ("Segoe UI Black", 18))
-    labelCadastro.grid(row = 2, column=0, padx=5, pady=5)
+    botao_cadastroAluna = ctk.CTkButton(widget3, image= imageAdd_ctk, hover_color= "#292B25", width=imageAdd_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(cadastro))
+    botao_cadastroAluna.grid(row=0, column=0, padx=10, pady=5)
+    labelCadastroAluna = ctk.CTkLabel(widget3, text= "Cadastro", font= ("Segoe UI", 18))
+    
+    botao_editar = ctk.CTkButton(widget3, image= imageEdit_ctk, hover_color= "#292B25", width=imageEdit_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(editar_alunas))
+    botao_editar.grid(row=0, column=1, padx=10, pady=5)
+    labelEditar = ctk.CTkLabel(widget3, text= "Editar", font= ("Segoe UI", 18))
+    
+    botao_excluir = ctk.CTkButton(widget3, image= imageRemove_ctk, hover_color= "#292B25", width=imageRemove_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(excluir_alunas))
+    botao_excluir.grid(row=0, column=2, padx=10, pady=5)
+    labelExcluir = ctk.CTkLabel(widget3, text= "Excluir", font= ("Segoe UI", 18))
     
     botao_vagas = ctk.CTkButton(widget3, image= imageVagas_ctk, hover_color= "#292B25", width=imageVagas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(vagasDisponiveis))
-    botao_vagas.grid(row=1, column=1, padx=5, pady=5)
-    labelVagas = ctk.CTkLabel(widget3, text= "Vagas Disponíveis", font= ("Segoe UI Black", 18))
-    labelVagas.grid(row=2, column=1, padx=5, pady=5)
+    botao_vagas.grid(row=0, column=3, padx=10, pady=5)
+    labelVagas = ctk.CTkLabel(widget3, text= "Vagas Disponíveis", font= ("Segoe UI", 18))
 
     botao_mensalidades = ctk.CTkButton(widget3, image= imageVenc_ctk, hover_color= "#292B25", width=imageVenc_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(mensalidades_vencidas))
-    botao_mensalidades.grid(row=1, column=2, padx=5, pady=5)
-    labelMensalidades = ctk.CTkLabel(widget3, text= "Mensalidades", font= ("Segoe UI Black", 18))
-    labelMensalidades.grid(row=2, column=2, padx=5, pady=5)
-    '''
-    botao_lista = ctk.CTkButton(widget3, image= imageAlunas_ctk, hover_color= "#292B25", width=imageAlunas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(lista_alunas))
-    botao_lista.grid(row=1, column=3, padx=5, pady=5)
-    labelLista = ctk.CTkLabel(widget3, text= "Lista de Alunas", font= ("Segoe UI Black", 18))
-    labelLista.grid(row=2, column=3, padx=5, pady=5)
-    '''
-    botao_pesquisa = ctk.CTkButton(widget3, image= imageVagas_ctk, hover_color= "#292B25", width=imageVagas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(pesquisa_alunas))
-    botao_pesquisa.grid(row=1, column=4, padx=5, pady=5)
-    labelPesquisa = ctk.CTkLabel(widget3, text= "Pesquisar Alunas", font= ("Segoe UI Black", 18))
-    labelPesquisa.grid(row=2, column=4, padx=5, pady=5)
+    botao_mensalidades.grid(row=0, column=4, padx=10, pady=5)
+    labelMensalidades = ctk.CTkLabel(widget3, text= "Mensalidades", font= ("Segoe UI", 18))
+    
+    botao_pesquisa = ctk.CTkButton(widget3, image= imageAlunas_ctk, hover_color= "#292B25", width=imageAlunas_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(pesquisa_alunas))
+    botao_pesquisa.grid(row=0, column=5, padx=10, pady=5)
+    labelPesquisa = ctk.CTkLabel(widget3, text= "Pesquisar", font= ("Segoe UI", 18))
     
     botao_aniversarios = ctk.CTkButton(widget3, image= imageNiver_ctk, hover_color= "#292B25", width=imageNiver_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(aniversarios_do_mes))
-    botao_aniversarios.grid(row=1, column=5, padx=5, pady=5)
-    labelAniversarios = ctk.CTkLabel(widget3, text= "Aniversariantes", font= ("Segoe UI Black", 18))
-    labelAniversarios.grid(row=2, column=5, padx=5, pady=5)
+    botao_aniversarios.grid(row=0, column=6, padx=10, pady=5)
+    labelAniversarios = ctk.CTkLabel(widget3, text= "Aniversariantes", font= ("Segoe UI", 18))
     
     botao_inicio = ctk.CTkButton(widget3, image= imageHome_ctk, hover_color= "#292B25", width=imageHome_ctk.__sizeof__(), height=botao_altura , text="", fg_color="transparent", command=go_home)
+    
+    def cadastroUser(janela):
+        frameCadastroUser = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
+        frameCadastroUser.place(relx=0.5, rely=0.23, anchor=N)
+        widgetCadastroUser = ctk.CTkFrame(frameCadastroUser, fg_color= "transparent", width=1450, height=750)
+        widgetCadastroUser.place(relx= 0.5, anchor=N)
+        
+        labelCadastroUser = ctk.CTkLabel(widgetCadastroUser, text="Cadastro de Usuário", font=("Segoe UI Black",28))
+        labelCadastroUser.grid(row=0, column=0, columnspan=9, pady= 30)
+        
+        #linha 1 - Nome de Usuário, Senha
+        labelNomeUser = ctk.CTkLabel(widgetCadastroUser, text="Nome de Usuário:", font=("Segoe UI", 15))
+        labelNomeUser.grid(row=1, column=0, pady=10, sticky=E)
+        entryNomeUser = ctk.CTkEntry(widgetCadastroUser, font=("Segoe UI", 15))
+        entryNomeUser.grid(row=1, column=1, columnspan=3, pady=10, padx=10, sticky=EW)
 
-    botao_sair = ctk.CTkButton(janela, text="Sair", hover_color= "#292B25", command=janela.quit)
-    botao_sair.pack(side="bottom", pady=10)
+        labelSenha = ctk.CTkLabel(widgetCadastroUser, text="Senha:", font=("Segoe UI", 15))
+        labelSenha.grid(row=1, column=4, pady=10, sticky=E)
+        entrySenha = ctk.CTkEntry(widgetCadastroUser, font=("Segoe UI", 15), show="*")
+        entrySenha.grid(row=1, column=5, pady=10, padx=5, sticky=W)
+        
+        labelVoltar = ctk.CTkButton(widgetCadastroUser, image=imageVoltar_ctk, hover_color= "#292B25", width=imageVoltar_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: clear_and_show_page(autenticacao))
+        labelVoltar.grid(row = 9, column = 7, pady=10, padx= 10, sticky=E)
+        labelContinuar = ctk.CTkButton(widgetCadastroUser, image=imageInput_ctk, hover_color= "#292B25", width=imageInput_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: cadastrar_usuario())
+        labelContinuar.grid(row = 9, column = 8, pady=10, padx= 10, sticky=E)
+        
+        def cadastrar_usuario():
+            academia = db.Academia()
+            usuario = db.Usuario(entryNomeUser.get().strip())
+            usuario.set_password(entrySenha.get().strip())
+            academia.add_usuario_simples(usuario)
+
+            if academia.autenticar_usuario_simples(usuario.check_user(entryNomeUser.get().strip()), usuario.check_password(entrySenha.get().strip())):
+                sucesso_label = ctk.CTkLabel(widgetCadastroUser, text="Usuário cadastrado com sucesso!", text_color="green", font=("Arial", 15))
+                sucesso_label.grid(row=8, column=0, columnspan=9, pady=10)
+                sucesso_label.after(3000, sucesso_label.destroy, lambda: (widgetCadastroUser.destroy(), clear_and_show_page(autenticacao)))
+            else:
+                erro_label = ctk.CTkLabel(widgetCadastroUser, text="Erro ao cadastrar usuário.", text_color="red", font=("Arial", 15))
+                erro_label.grid(row=8, column=0, columnspan=9, pady=10)
+                erro_label.after(3000, erro_label.destroy)
+
+        return frameCadastroUser
     
-    widgetAutenticacao = ctk.CTkFrame(janela, fg_color="transparent")
-    labelUser = ctk.CTkLabel(widgetAutenticacao, text="Usuário:", font=("Segoe UI Black", 20))
-    labelUser.grid(row=0, column=0, padx=5, pady=5)
-    entryUser = ctk.CTkEntry(widgetAutenticacao, font=("Arial", 20))
-    entryUser.grid(row=0, column=1, padx=5, pady=5)
-    labelSenha = ctk.CTkLabel(widgetAutenticacao, text="Senha:", font=("Segoe UI Black", 20))
-    labelSenha.grid(row=1, column=0, padx=5, pady=5)
-    entrySenha = ctk.CTkEntry(widgetAutenticacao, font=("Arial", 20), show="*")
-    entrySenha.grid(row=1, column=1, padx=5, pady=5)
-    
-    def autenticar():
-        if entryUser.get() == "admin" and entrySenha.get() == "admin":
-            widgetAutenticacao.place_forget()
-            go_home()
-        else:
-            erro_label = ctk.CTkLabel(janela, text="Usuário ou senha incorretos.", text_color="red", font=("Arial", 20))
-            erro_label.place(relx=0.36, rely=0.6, anchor=CENTER)
-            erro_label.after(2000, erro_label.destroy)
-    
-    botaoLogin = ctk.CTkButton(widgetAutenticacao, image=imageInput_ctk, hover_color= "#292B25", width=imageInput_ctk.__sizeof__(), height=botao_altura, text="", fg_color="transparent", command=lambda: autenticar())
-    botaoLogin.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
-    widgetAutenticacao.place(relx=0.35, rely=0.5, anchor=CENTER)
-    
+    autenticacao(janela)
     janela.mainloop()
 
 if __name__ == "__main__":
