@@ -333,16 +333,17 @@ class Academia:
 
         return(f"{aluna.nome} cadastrada nos horários com sucesso.")
 
-    def listaAlunas(self):
+    def listaAlunas(self, cpf) -> List[Tuple]:
+        cpf_limpo = ''.join(filter(str.isdigit, cpf))
+        
         with self._connect() as conn:
             cur = conn.cursor()
             cur.execute('''
-            SELECT nome, apelido, cpf, dias, horario, valor, vencimento FROM alunas ORDER BY nome
-            ''')
+            SELECT * FROM alunas WHERE cpf = ?''', (cpf_limpo,))
             rows = cur.fetchall()
 
         if not rows:
-            return("Nenhuma aluna cadastrada.")
+            return None
         else:
             return rows
     
@@ -506,7 +507,7 @@ class Academia:
         """
         with self._connect() as conn:
             cur = conn.cursor()
-            cur.execute('SELECT nome, pwd_hash, salt FROM usuarios WHERE nome = ?', (nome.lower(),))
+            cur.execute('SELECT nome, pwd_hash, salt FROM usuarios WHERE nome = ?', (nome,))
             row = cur.fetchone()
             if not row:
                 return False
@@ -570,6 +571,7 @@ def validar_data(data: str):
         return True                      
 
 def validar_telefone(telefone: str):
+    telefone = ''.join(ch for ch in telefone if ch.isdigit())
     if len(telefone) != 11:
         return False
     

@@ -424,8 +424,256 @@ def editar_alunas(janela):
     academia = db.Academia()
     widgetEditar = ctk.CTkFrame(janela, fg_color="transparent", width=1450, height=750)
     widgetEditar.place(relx=0.5, rely=0.58, anchor=CENTER, relwidth=0.9, relheight=0.7)
-    label = ctk.CTkLabel(widgetEditar, text="Página de Edição de Alunas", font=("Segoe UI Black", 30))
-    label.pack(pady=100)
+    widgetEditar.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+
+    label = ctk.CTkLabel(widgetEditar, text="Editar Aluna", font=("Segoe UI Black", 30))
+    label.grid(row=0, column=0, columnspan=6, pady=20)
+
+    labelInstrucao = ctk.CTkLabel(widgetEditar, text="Insira o nome ou CPF da aluna:", font=("Arial", 15))
+    labelInstrucao.grid(row=1, column=1, padx=5, pady=10, sticky=E)
+    entryEditar = ctk.CTkEntry(widgetEditar, font=("Arial", 15), width=300)
+    entryEditar.grid(row=1, column=2, columnspan=2, pady=10)
+    botaoPesquisar = ctk.CTkButton(widgetEditar, text="Buscar", font=("Arial", 15), command=lambda: buscar_alunas())
+    botaoPesquisar.grid(row=1, column=4, pady=10, sticky=W)
+    
+    label_status = ctk.CTkLabel(widgetEditar, text="", font=("Arial", 15))
+    entryacao = None
+    alunaEdit = None
+    cpf_para_editar = None
+    novos_valores = []
+    entryInfo = None 
+    label_nova_info = None
+    switch_editar = {
+        "Nome": "nome", "Data de Nascimento": "nascimento", "CEP": "cep", "Endereço": "endereco",
+        "Bairro": "bairro", "Celular": "celular", "CPF": "cpf", "Quantidade de Dias": "dias",
+        "Dias da Semana": "diasSemana", "Horário": "horario", "Valor da Mensalidade": "valor", "Vencimento": "vencimento"}
+
+    def executar_edicao(alunas_listadas, scroll):
+        nonlocal entryacao, alunaEdit, cpf_para_editar, novos_valores
+        
+        if not entryacao:
+            label_status.configure(text="Erro: Campo de ID não encontrado.", text_color="red")
+            label_status.grid(row=2, column=0, columnspan=6, pady=5)
+            return
+            
+        try:
+            id_visual = int(entryacao.get().strip())
+            cpf_para_editar = alunas_listadas[id_visual - 1][1]
+
+        except ValueError:
+            msg = "Erro: Insira um ID numérico válido."
+            label_status.configure(text=msg, text_color="red")
+            label_status.grid(row=2, column=0, columnspan=6, pady=5)
+            return
+
+        except IndexError:
+            msg = "Erro: ID fora do intervalo da lista."
+            label_status.configure(text=msg, text_color="red")
+            label_status.grid(row=2, column=0, columnspan=6, pady=5)
+            return
+        
+        scroll.destroy()
+        novos_valores = []
+        alunaEdit = academia.listaAlunas(cpf=cpf_para_editar)
+        
+        # Chama a função que inicia a interface de edição
+        exibir_interface_edicao(1) # Inicia no row 1 ou conforme a sua organização
+
+        # ----------------------------------------------------------------------------------------------------------------------
+
+    def exibir_interface_edicao(row_start):
+        nonlocal entryInfo, label_nova_info, alunaEdit
+        
+        # Limpa widgets de confirmação anteriores, se existirem
+        for widget in widgetEditar.grid_slaves():
+            if int(widget.grid_info()["row"]) >= row_start:
+                widget.destroy()
+
+        label_status.configure(text=f"Selecione o campo para editar de {alunaEdit[0][1]}:")
+        label_status.grid(row=row_start, column=0, columnspan=2, pady=5)
+        
+        # Campo de seleção da informação a ser editada
+        entryInfo = ctk.CTkComboBox(
+            widgetEditar, 
+            values=list(switch_editar.keys()), 
+            font=("Arial", 15), 
+            width=200, 
+            command=lambda selection: atualizar_label_antiga_info(selection, row_start + 1) # Chama função ao selecionar
+        )
+        entryInfo.grid(row=row_start, column=2, pady=5)
+        entryInfo.set("Selecione uma informação")
+        
+        # Campo para inserir o novo valor (criado, mas só preenchido após seleção)
+        label_nova_info = ctk.CTkEntry(
+            widgetEditar, 
+            placeholder_text="Insira a nova informação:", 
+            font=("Arial", 15)
+        )
+        label_nova_info.grid(row=row_start + 2, column=3, columnspan=2, pady=5)
+        
+        # Botão de Ação: Chama 'processar_edicao' para coletar e continuar
+        btn_adicionar = ctk.CTkButton(
+            widgetEditar, 
+            text="Adicionar Edição", 
+            command=lambda: processar_edicao(row_start + 4)
+        )
+        btn_adicionar.grid(row=row_start + 3, column=0, columnspan=6, pady=10)
+
+    def atualizar_label_antiga_info(selection, row):
+        nonlocal alunaEdit
+        
+        try:
+            campo_db = switch_editar[selection]
+            valor_antigo = alunaEdit[0].get(campo_db, "Não encontrado")
+
+            for widget in widgetEditar.grid_slaves():
+                if widget.winfo_class() == "CTkLabel" and widget.grid_info().get("row") == row:
+                    widget.destroy()
+                
+            label_antiga_info = ctk.CTkLabel(
+                widgetEditar, 
+                text=f"Você está mudando {selection} (Valor atual: {valor_antigo}) para:", 
+                font=("Arial", 15)
+            )
+            label_antiga_info.grid(row=row, column=0, columnspan=3, pady=5)
+        except KeyError:
+            pass
+            
+    def processar_edicao(row_start):
+        nonlocal novos_valores, entryInfo, label_nova_info
+        
+        campo_selecionado = entryInfo.get()
+        novo_valor = label_nova_info.get().strip()
+
+        if campo_selecionado == "Selecione uma informação" or not novo_valor:
+            label_status.configure(text="Erro: Selecione um campo e insira um valor.", text_color="red")
+            label_status.grid(row=2, column=0, columnspan=6, pady=5)
+            return
+            
+        # 2. Armazena a edição
+        campo_db = switch_editar[campo_selecionado]
+        novos_valores.append({campo_db: novo_valor})
+
+        # Limpa widgets da iteração anterior
+        for widget in widgetEditar.grid_slaves():
+            if int(widget.grid_info()["row"]) >= row_start - 3:
+                widget.destroy()
+
+        # 3. Pergunta de continuação (Nova interface)
+        label_status.configure(text=f"Campo '{campo_selecionado}' adicionado para edição. Deseja alterar mais alguma coisa?")
+        
+        label_confirmar = ctk.CTkLabel(widgetEditar, text="Deseja alterar mais alguma informação?", font=("Arial", 15))
+        label_confirmar.grid(row=row_start, column=0, columnspan=3, pady=5)
+        
+        btn_sim = ctk.CTkButton(widgetEditar, text="Sim (Adicionar Outro)", command=lambda: exibir_interface_edicao(row_start + 2))
+        btn_sim.grid(row=row_start, column=3, padx=10, pady=5)
+        
+        btn_nao = ctk.CTkButton(widgetEditar, text="Não (Finalizar Edição)", command=finalizar_edicao)
+        btn_nao.grid(row=row_start, column=4, padx=10, pady=5)
+
+    def finalizar_edicao():
+        nonlocal novos_valores, cpf_para_editar, alunaEdit, label_status, academia
+                
+        # Destrói a interface de confirmação/continuação
+        for widget in widgetEditar.grid_slaves():
+            widget.destroy()
+            
+        if not novos_valores:
+            label_status.configure(text="Nenhuma alteração registrada.")
+            label_status.grid(row=2, column=0, columnspan=6, pady=5)
+            return
+            
+        # Converte a lista de dicionários em um único dicionário para a função editarAluna
+        dados_para_db = {}
+        for item in novos_valores:
+            dados_para_db.update(item)
+            
+        # Chama a função de edição do banco de dados (academia.editarAluna)
+        text = academia.editarAluna(cpf_para_editar, **dados_para_db)
+        
+        # Exibe o Pop-up de Confirmação (igual ao seu original)
+        popup_window = ctk.CTkToplevel(widgetEditar)
+        popup_window.title("Confirmação de Edição")
+        popup_window.geometry("400x150")
+        popup_window.transient(widgetEditar) # Mantém a janela no topo
+        
+        labEditar = ctk.CTkLabel(popup_window, text="", font=("Arial", 15))
+        labEditar.pack(pady=15)
+        
+        cor = "red"
+        if text == "Dados da aluna atualizados com sucesso.":
+            cor = "green"
+        
+        labEditar.configure(text=text, text_color=cor)
+
+        def fechar_e_atualizar():
+            popup_window.destroy()
+            # Assume que buscar_alunas é a função que atualiza a lista principal
+            buscar_alunas() 
+            
+        confirmar = ctk.CTkButton(popup_window, text="Ok", command=fechar_e_atualizar)
+        confirmar.pack(pady=10)
+        popup_window.grab_set()
+                
+    def buscar_alunas():
+        nonlocal entryacao
+        
+        for widget in widgetEditar.winfo_children():
+            if isinstance(widget, ctk.CTkScrollableFrame):
+                widget.destroy()
+                
+        label_status.configure(text="")
+        label_status.grid_forget()
+        
+        scroll = ctk.CTkScrollableFrame(widgetEditar, fg_color="transparent")
+        scroll.place(relx=0.5, rely=0.6, anchor=CENTER, relwidth=0.9, relheight=0.7)
+        scroll.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+        
+        alunas = academia.buscarPorNome_ou_Cpf(entryEditar.get().strip())
+        
+        # Limpa o campo de ação antigo
+        if entryacao:
+            entryacao.destroy()
+            entryacao = None
+            
+        if not alunas:
+            labelaluna = ctk.CTkLabel(scroll, text="Nenhuma aluna encontrada com essa informação", font=("Arial", 18))
+            labelaluna.grid(row=0, column=0, columnspan=6, pady=10, padx=5)
+        else:            
+            # Cabeçalhos
+            labelID = ctk.CTkLabel(scroll, text="ID", font=("Arial", 15))
+            labelID.grid(row=0, column=0, pady=5, padx=5)
+            labelnome = ctk.CTkLabel(scroll, text="Nome", font=("Arial", 15))
+            labelnome.grid(row=0, column=1, pady=5, padx=5)
+            labelcpf = ctk.CTkLabel(scroll, text="CPF", font=("Arial", 15))
+            labelcpf.grid(row=0, column=2, pady=5, padx=5)
+            labelvalor = ctk.CTkLabel(scroll, text="Valor", font=("Arial", 15))
+            labelvalor.grid(row=0, column=3, pady=5, padx=5)
+            labelvencimento = ctk.CTkLabel(scroll, text="Vencimento", font=("Arial", 15))
+            labelvencimento.grid(row=0, column=4, pady=5, padx=5)
+
+            # Campo e Botão de Ação (criados no scroll para centralizar)
+            entryacao = ctk.CTkEntry(scroll, placeholder_text="ID", font=("Arial", 12), width=50)
+            entryacao.grid(row=0, column=5, pady=5, padx=5, sticky=W)
+            
+            # Passa a lista de alunas para o comando de edição
+            botaoEnter = ctk.CTkButton(scroll, text="Editar", font=("Arial", 12), command=lambda: executar_edicao(alunas, scroll))
+            botaoEnter.grid(row=0, column=5, pady=5, padx=5, sticky=E)
+
+            for i, aluna in enumerate(alunas, start=1):
+                nome, cpf, nascimento, valor, vencimento = aluna
+                
+                entryID = ctk.CTkLabel(scroll, text=str(i), font=("Arial", 15)) # i = ID visual
+                entryID.grid(row=i, column=0, pady=5, padx=5)
+                entrynome = ctk.CTkLabel(scroll, text=nome, font=("Arial", 15))
+                entrynome.grid(row=i, column=1, pady=5, padx=5)
+                entrycpf = ctk.CTkLabel(scroll, text=cpf, font=("Arial", 15))
+                entrycpf.grid(row=i, column=2, pady=5, padx=5)
+                entryvalor = ctk.CTkLabel(scroll, text=f"R${valor:.2f}", font=("Arial", 15))
+                entryvalor.grid(row=i, column=3, pady=5, padx=5)
+                entryvencimento = ctk.CTkLabel(scroll, text=str(vencimento), font=("Arial", 15))
+                entryvencimento.grid(row=i, column=4, pady=5, padx=5)
+
     return widgetEditar
 
 def excluir_alunas(janela):
@@ -953,12 +1201,11 @@ def entrada():
             academia = db.Academia()
             usuario = db.Usuario(entryNomeUser.get().strip())
             usuario.set_password(entrySenha.get().strip())
-            academia.add_usuario_simples(usuario)
 
-            if academia.autenticar_usuario_simples(usuario.check_user(entryNomeUser.get().strip()), usuario.check_password(entrySenha.get().strip())):
+            if academia.add_usuario_simples(usuario):
                 sucesso_label = ctk.CTkLabel(widgetCadastroUser, text="Usuário cadastrado com sucesso!", text_color="green", font=("Arial", 15))
                 sucesso_label.grid(row=8, column=0, columnspan=9, pady=10)
-                sucesso_label.after(3000, sucesso_label.destroy, lambda: (widgetCadastroUser.destroy(), clear_and_show_page(autenticacao)))
+                sucesso_label.after(1000, lambda: (sucesso_label.destroy, widgetCadastroUser.destroy(), clear_and_show_page(autenticacao)))
             else:
                 erro_label = ctk.CTkLabel(widgetCadastroUser, text="Erro ao cadastrar usuário.", text_color="red", font=("Arial", 15))
                 erro_label.grid(row=8, column=0, columnspan=9, pady=10)
@@ -966,7 +1213,7 @@ def entrada():
 
         return frameCadastroUser
     
-    autenticacao(janela)
+    clear_and_show_page(autenticacao)
     janela.mainloop()
 
 if __name__ == "__main__":
